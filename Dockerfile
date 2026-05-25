@@ -10,10 +10,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 COPY pyproject.toml README.md ./
-COPY manage.py ./
-COPY config ./config
 COPY vps_market ./vps_market
 
 RUN pip install --no-cache-dir .
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0.0.0.0:8000"]
+CMD ["gunicorn", "--chdir", "vps_market", "vps_market.wsgi:application", "--bind", "0.0.0.0:8000"]

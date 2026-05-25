@@ -8,8 +8,8 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from django.conf import settings
 from django.core.management.base import BaseCommand
 
-from vps_market.providers import CRAWLER_TYPES
-from vps_market.services import crawl_once
+from crawlers.providers import CRAWLER_TYPES
+from offers.services import crawl_once
 
 
 class Command(BaseCommand):
@@ -37,19 +37,20 @@ class Command(BaseCommand):
         )
         providers = options["provider"] or list(settings.CRAWL_PROVIDERS)
         timeout = settings.HTTP_TIMEOUT_SECONDS
+        cookies = settings.CRAWLER_COOKIES
 
         if not options["worker"]:
-            summary = crawl_once(provider_slugs=providers, timeout=timeout)
+            summary = crawl_once(provider_slugs=providers, timeout=timeout, cookies=cookies)
             self.stdout.write(self.style.SUCCESS(f"Crawl complete: {summary}"))
             return
 
-        crawl_once(provider_slugs=providers, timeout=timeout)
+        crawl_once(provider_slugs=providers, timeout=timeout, cookies=cookies)
         scheduler = BackgroundScheduler(timezone="UTC")
         scheduler.add_job(
             crawl_once,
             "interval",
             minutes=options["interval_minutes"],
-            kwargs={"provider_slugs": providers, "timeout": timeout},
+            kwargs={"provider_slugs": providers, "timeout": timeout, "cookies": cookies},
             id="crawl-offers",
             max_instances=1,
             coalesce=True,

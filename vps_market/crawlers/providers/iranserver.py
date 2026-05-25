@@ -3,17 +3,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from vps_market.providers.base import Offer, ProviderCrawler
-from vps_market.utils.js_extract import extract_balanced, extract_var_literal, load_json_or_js_literal
-from vps_market.utils.specs import (
-    extract_specs_from_lines,
-    parse_cpu,
-    parse_gpu_memory_mb,
-    parse_memory_mb,
-    parse_storage_gb,
-    parse_traffic_gb,
-)
-from vps_market.utils.text import normalize_digits, normalize_text, parse_int, price_to_irr
+from crawlers.providers.base import Offer, ProviderCrawler
+from crawlers.utils.js_extract import extract_balanced, extract_var_literal, load_json_or_js_literal
+from crawlers.utils.specs import extract_specs_from_lines, parse_gpu_memory_mb
+from crawlers.utils.text import normalize_digits, normalize_text, parse_int, price_to_irr
 
 
 class IranServerCrawler(ProviderCrawler):
@@ -30,8 +23,8 @@ class IranServerCrawler(ProviderCrawler):
         "usa": "https://www.iranserver.com/vps/usa/",
     }
 
-    def __init__(self, timeout: int = 30) -> None:
-        super().__init__(timeout=timeout)
+    def __init__(self, timeout: int = 30, cookie: str | None = None) -> None:
+        super().__init__(timeout=timeout, cookie=cookie)
         self.session.headers.update(
             {
                 "X-Requested-With": "XMLHttpRequest",
@@ -43,30 +36,35 @@ class IranServerCrawler(ProviderCrawler):
         offers: list[Offer] = []
         offers.extend(self.fetch_iran_cloud_api())
         for region, url in self.vps_region_urls.items():
+            print(f"Crawling region {region} at {url}")
             offers.extend(self.parse_region_page(region, url, self.get_text(url)))
         offers.extend(self.parse_gpu_page(self.get_text(self.gpu_url)))
         return offers
 
     def fetch_iran_cloud_api(self) -> list[Offer]:
         offers: list[Offer] = []
-        for category_id in range(1, 6):
+        for category_id in range(1, 5):
             page = 1
             while True:
-                payload = {
+                # body = (
+                #     "_token=6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI"
+                #     f"&type=cloud&cycle=monthly&category_id={category_id}&page={page}&per_page=20"
+                # )
+                body = {
                     "_token": "6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI",
                     "type": "cloud",
                     "cycle": "monthly",
                     "category_id": category_id,
                     "page": page,
-                    "per_page": 100,
+                    "per_page": 20,
                 }
-                body = self.post_json(self.plans_api_url, payload)
-                for item in body.get("data") or []:
+                response = self.post_form_json(self.plans_api_url, body)
+                for item in response.get("data") or []:
                     offers.append(self._api_item_to_offer(item, category_id))
 
-                meta = body.get("meta") or {}
+                meta = response.get("meta") or {}
                 last_page = int(meta.get("last_page") or page)
-                if page >= last_page or not body.get("data"):
+                if page >= last_page or not response.get("data"):
                     break
                 page += 1
         return offers
@@ -97,7 +95,10 @@ class IranServerCrawler(ProviderCrawler):
         )
 
     def parse_region_page(self, region: str, url: str, html_text: str) -> list[Offer]:
-        literal = extract_var_literal(html_text, "window.allCardData")
+        literal = extract_var_literal(html_text, "window.allCardData = {")
+        # print('='*50, '\n\n\n')
+        # print(literal)
+        # print('='*50, '\n\n\n')
         data = load_json_or_js_literal(literal)
         offers: list[Offer] = []
 

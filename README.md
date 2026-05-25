@@ -5,6 +5,16 @@ This Django project crawls VPS/cloud offers, normalizes them into one schema, st
 - IranServer cloud plans, international VPS pages, and GPU VPS page
 - ArvanCloud VPS pricing page
 
+## Structure
+
+```text
+vps_market/
+  manage.py
+  vps_market/      # Django project settings, URLs, ASGI/WSGI
+  offers/          # Django app: models, API, admin, management commands
+  crawlers/        # Provider crawl/parsing code, outside the Django app
+```
+
 ## Run with Docker
 
 ```powershell
@@ -21,13 +31,13 @@ Services:
 ## Run one crawl
 
 ```powershell
-docker compose run --rm crawler python manage.py crawl_offers
+docker compose run --rm crawler python vps_market/manage.py crawl_offers
 ```
 
 Run only one provider:
 
 ```powershell
-docker compose run --rm crawler python manage.py crawl_offers --provider arvancloud
+docker compose run --rm crawler python vps_market/manage.py crawl_offers --provider arvancloud
 ```
 
 ## Local development
@@ -37,16 +47,19 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -e .
 copy .env.example .env
-python manage.py migrate
-python manage.py crawl_offers
-python manage.py runserver
+python vps_market/manage.py migrate
+python vps_market/manage.py crawl_offers
+python vps_market/manage.py runserver
 ```
 
 ## API
 
+- `GET /api/docs/`
+- `GET /api/schema/`
 - `GET /api/providers/`
 - `GET /api/offers/`
 - `GET /api/offers/{id}/`
+- `GET /api/statistics/`
 
 Useful offer filters:
 
@@ -71,4 +84,11 @@ Useful offer filters:
 - `server_offers`: normalized VPS/container/GPU offers, with raw source payload in `raw_payload`
 - `crawl_runs`: status and summary of each crawl run
 
-The primary expansion point is `vps_market/providers`. Add a new provider class that returns normalized `Offer` instances, then register it in `vps_market/providers/__init__.py`. Persistence stays in `vps_market/services.py` and uses Django models only.
+The primary expansion point is `vps_market/crawlers/providers`. Add a new provider class that returns normalized `Offer` instances, then register it in `vps_market/crawlers/providers/__init__.py`. Persistence stays in `vps_market/offers/services.py` and uses Django models only.
+
+Provider cookies can be set through `.env`:
+
+```text
+ARVANCLOUD_COOKIE=...
+IRANSERVER_COOKIE=...
+```

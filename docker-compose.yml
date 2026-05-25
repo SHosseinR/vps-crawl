@@ -17,7 +17,7 @@ services:
 
   migrate:
     build: .
-    command: python manage.py migrate --noinput
+    command: python vps_market/manage.py migrate --noinput
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
       DJANGO_SECRET_KEY: dev-only-change-me
@@ -31,13 +31,15 @@ services:
 
   web:
     build: .
-    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    command: gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
       DJANGO_SECRET_KEY: dev-only-change-me
       DJANGO_DEBUG: "false"
       DJANGO_ALLOWED_HOSTS: "*"
       API_PAGE_SIZE: 50
+      ARVANCLOUD_COOKIE: "ar_lang=fa; _ga=GA1.1.1300741880.1769873636; _ym_uid=1769873637408955207; _ym_d=1769873637; _clck=1cifq09%5E2%5Eg3c%5E0%5E2222; _ga_8VNGLNVW29=GS2.1.s1770365398$o2$g1$t1770365585$j60$l0$h0; lang=fa; _pk_id.1.5d13=d0f2e9e056934b15.1779689946.; ar_acd=d0aa841d-5299-54c9-a3a0-35c6be0d2638; ar_tk=694dwzdLW262EaMjo1avYUmXSPKuHd3WdEaEaYl3f4vrIYSxKWAmpxTbs1wXfV6wY0cqnE6RoU0zoYLFQA5YhZZv8EMbJRLtavvdh6odjLWunPG0M87boIswpXA8thjGthNI9WWHNjHGiwenaRtj14N3NZOHYfEw7Ebj2NAJKM2HO0PCMmtBBCNj5zYq13ZURMQoCCsnedZHctAgvDg0CLWwa1nukH7tpNEyZ8QPEZjDCOr1T3b4nLGrhYqsp50; ar_rft=ISGsSyWNKpg5KhPBKqRv3c3nHQCakVUheqqsrvwjxpBCcPWrtaFK39GatpieGSU76xRfnx5y59tbJI0hOvrPbrRFfue480lDcX3C8ayORoEKbQd1klBPWSZ2PgenvXDkJxGr7xtVhABvGDvf5sNUAsXAmVgBGvEj8hxi863BCPMZqLwN6AzLbe3H3X0v0H8dyOGmhUKoNT2FRpjVv4ggoqEjO0zJL350YFv5AhK0ZvNx4tV8ZyVNxsT96jQD9sm; ar_exp=2026-05-25T20:46:05Z; __arcsjs=6b68dbf2a104e7a4a4f5b348b3ecb7e5; __arcsjsc=arcookie-1779712403-332f37d64818e325ebb6170c157c30ea; XSRF-TOKEN=eyJpdiI6IlR1aDVPK0ZXc1ExWUNWQ2JoM245TkE9PSIsInZhbHVlIjoic3BnUWZhRzRHRTNocGtiRzY0cUI4NjB3aithUktjak5iTWVQblovQXR5NEFQNmJBUjdnQk9VU29CZW4vMm9oZVFLdEV1OFIvMkVPS0RwVlY2S09zc0RRYTNjQTMwRTBHMm1WdGp3M1hKZEdBc3lUMEFLM3VDcjEzdjZNejVvSzgiLCJtYWMiOiJmM2I5Y2UyNGE0NjJiNWQ1YTM5NGI0MTQzMmJkZjI2YjA4YzE1N2MyYjAwMmUyNjE3MzUzNzk5ZWMzZDNjYTU5IiwidGFnIjoiIn0%3D; arvan_session=eyJpdiI6Ik9GeWQwYXNjRmxDMlMzZTJjQXRRRXc9PSIsInZhbHVlIjoieDJnNHJvSEVFNEJCV2xGZEMwMUlqcXJ2bys4VHhYNmZHYjZwWUtCeXV1ckxzcmp6YzJEd3JkUHZJcDIveW5wOUYxLzBXZmEvTFZZQzc2RDQvT094QURLMUsrZ2x0cGJWNXM2WVRaWGJ4Y0s0YmJqeEQ4Mnh1N2dyQzBNMlQ2ejIiLCJtYWMiOiJkZmI2NDMyNDBlZWM1OTU1NWJhMzE1MWI4NTAyZTNhZjg2NjZlNWM1NDQyNGJlZWZhNmQxMjI1YzRmODkwOWYxIiwidGFnIjoiIn0%3D"
+      IRANSERVER_COOKIE: ""
       LOG_LEVEL: INFO
     ports:
       - "8000:8000"
@@ -52,7 +54,7 @@ services:
       
   crawler:
     build: .
-    command: python manage.py crawl_offers --worker
+    command: python vps_market/manage.py crawl_offers --worker
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
       DJANGO_SECRET_KEY: dev-only-change-me
@@ -60,6 +62,8 @@ services:
       DJANGO_ALLOWED_HOSTS: "*"
       CRAWL_INTERVAL_MINUTES: 360
       CRAWL_PROVIDERS: iranserver,arvancloud
+      ARVANCLOUD_COOKIE: "ar_lang=fa; _ga=GA1.1.1300741880.1769873636; _ym_uid=1769873637408955207; _ym_d=1769873637; _clck=1cifq09%5E2%5Eg3c%5E0%5E2222; _ga_8VNGLNVW29=GS2.1.s1770365398$o2$g1$t1770365585$j60$l0$h0; lang=fa; _pk_id.1.5d13=d0f2e9e056934b15.1779689946.; ar_acd=d0aa841d-5299-54c9-a3a0-35c6be0d2638; ar_tk=694dwzdLW262EaMjo1avYUmXSPKuHd3WdEaEaYl3f4vrIYSxKWAmpxTbs1wXfV6wY0cqnE6RoU0zoYLFQA5YhZZv8EMbJRLtavvdh6odjLWunPG0M87boIswpXA8thjGthNI9WWHNjHGiwenaRtj14N3NZOHYfEw7Ebj2NAJKM2HO0PCMmtBBCNj5zYq13ZURMQoCCsnedZHctAgvDg0CLWwa1nukH7tpNEyZ8QPEZjDCOr1T3b4nLGrhYqsp50; ar_rft=ISGsSyWNKpg5KhPBKqRv3c3nHQCakVUheqqsrvwjxpBCcPWrtaFK39GatpieGSU76xRfnx5y59tbJI0hOvrPbrRFfue480lDcX3C8ayORoEKbQd1klBPWSZ2PgenvXDkJxGr7xtVhABvGDvf5sNUAsXAmVgBGvEj8hxi863BCPMZqLwN6AzLbe3H3X0v0H8dyOGmhUKoNT2FRpjVv4ggoqEjO0zJL350YFv5AhK0ZvNx4tV8ZyVNxsT96jQD9sm; ar_exp=2026-05-25T20:46:05Z; __arcsjs=6b68dbf2a104e7a4a4f5b348b3ecb7e5; __arcsjsc=arcookie-1779712403-332f37d64818e325ebb6170c157c30ea; XSRF-TOKEN=eyJpdiI6IlR1aDVPK0ZXc1ExWUNWQ2JoM245TkE9PSIsInZhbHVlIjoic3BnUWZhRzRHRTNocGtiRzY0cUI4NjB3aithUktjak5iTWVQblovQXR5NEFQNmJBUjdnQk9VU29CZW4vMm9oZVFLdEV1OFIvMkVPS0RwVlY2S09zc0RRYTNjQTMwRTBHMm1WdGp3M1hKZEdBc3lUMEFLM3VDcjEzdjZNejVvSzgiLCJtYWMiOiJmM2I5Y2UyNGE0NjJiNWQ1YTM5NGI0MTQzMmJkZjI2YjA4YzE1N2MyYjAwMmUyNjE3MzUzNzk5ZWMzZDNjYTU5IiwidGFnIjoiIn0%3D; arvan_session=eyJpdiI6Ik9GeWQwYXNjRmxDMlMzZTJjQXRRRXc9PSIsInZhbHVlIjoieDJnNHJvSEVFNEJCV2xGZEMwMUlqcXJ2bys4VHhYNmZHYjZwWUtCeXV1ckxzcmp6YzJEd3JkUHZJcDIveW5wOUYxLzBXZmEvTFZZQzc2RDQvT094QURLMUsrZ2x0cGJWNXM2WVRaWGJ4Y0s0YmJqeEQ4Mnh1N2dyQzBNMlQ2ejIiLCJtYWMiOiJkZmI2NDMyNDBlZWM1OTU1NWJhMzE1MWI4NTAyZTNhZjg2NjZlNWM1NDQyNGJlZWZhNmQxMjI1YzRmODkwOWYxIiwidGFnIjoiIn0%3D"
+      IRANSERVER_COOKIE: ""
       LOG_LEVEL: INFO
     depends_on:
       db:

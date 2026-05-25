@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from django.contrib import admin
 
-from vps_market.models import CrawlRun, Provider, ServerOffer
+from offers.models import CrawlRun, Provider, ServerOffer
 
 
 @admin.register(Provider)

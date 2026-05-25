@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from vps_market.utils.text import normalize_digits, normalize_text, parse_float
+from crawlers.utils.text import normalize_digits, normalize_text, parse_float
 
 
 def gb_to_mb(value: float | None) -> int | None:

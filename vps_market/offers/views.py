@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from django.db.models import Q, QuerySet
+from django.db.models import Count, Max, Min, Q, QuerySet
+from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
+from rest_framework import serializers
 from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from vps_market.models import Provider, ServerOffer
-from vps_market.serializers import ProviderSerializer, ServerOfferSerializer
+from offers.models import Provider, ServerOffer
+from offers.serializers import ProviderSerializer, ServerOfferSerializer
 
 
 class ProviderListAPIView(ListAPIView):
@@ -13,6 +17,26 @@ class ProviderListAPIView(ListAPIView):
     pagination_class = None
 
 
+@extend_schema(
+    parameters=[
+        OpenApiParameter("provider", str, description="Provider slug, e.g. iranserver"),
+        OpenApiParameter("region", str),
+        OpenApiParameter("country", str),
+        OpenApiParameter("city", str),
+        OpenApiParameter("billing_period", str),
+        OpenApiParameter("disk_type", str),
+        OpenApiParameter("has_gpu", bool),
+        OpenApiParameter("available", bool),
+        OpenApiParameter("min_price_irr", int),
+        OpenApiParameter("max_price_irr", int),
+        OpenApiParameter("min_cpu_cores", float),
+        OpenApiParameter("min_ram_mb", int),
+        OpenApiParameter("min_disk_gb", float),
+        OpenApiParameter("min_traffic_gb", float),
+        OpenApiParameter("search", str),
+        OpenApiParameter("ordering", str, description="Comma-separated fields, e.g. price_amount_irr,-cpu_cores"),
+    ]
+)
 class ServerOfferListAPIView(ListAPIView):
     serializer_class = ServerOfferSerializer
 
@@ -56,6 +80,46 @@ class ServerOfferListAPIView(ListAPIView):
 class ServerOfferDetailAPIView(RetrieveAPIView):
     queryset = ServerOffer.objects.select_related("provider").all()
     serializer_class = ServerOfferSerializer
+
+
+@extend_schema(
+    responses=inline_serializer(
+        name="OfferStatistics",
+        fields={
+            "providers_count": serializers.IntegerField(),
+            "offers_count": serializers.IntegerField(),
+            "available_offers_count": serializers.IntegerField(),
+            "gpu_offers_count": serializers.IntegerField(),
+            "min_price_irr": serializers.IntegerField(allow_null=True),
+            "max_price_irr": serializers.IntegerField(allow_null=True),
+            "regions": serializers.ListField(child=serializers.DictField()),
+            "providers": serializers.ListField(child=serializers.DictField()),
+        },
+    )
+)
+class OfferStatisticsAPIView(APIView):
+    def get(self, request):
+        offers = ServerOffer.objects.all()
+        aggregate = offers.aggregate(
+            offers_count=Count("id"),
+            available_offers_count=Count("id", filter=Q(available=True)),
+            gpu_offers_count=Count("id", filter=Q(has_gpu=True)),
+            min_price_irr=Min("price_amount_irr"),
+            max_price_irr=Max("price_amount_irr"),
+        )
+        aggregate["providers_count"] = Provider.objects.count()
+        aggregate["regions"] = list(
+            offers.exclude(region__isnull=True)
+            .values("region")
+            .annotate(count=Count("id"))
+            .order_by("-count", "region")
+        )
+        aggregate["providers"] = list(
+            offers.values("provider__slug", "provider__name")
+            .annotate(count=Count("id"), available_count=Count("id", filter=Q(available=True)))
+            .order_by("provider__slug")
+        )
+        return Response(aggregate)
 
 
 def _bool_filter(queryset: QuerySet[ServerOffer], field: str, value: str | None) -> QuerySet[ServerOffer]:

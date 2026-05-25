@@ -6,9 +6,9 @@ from urllib.parse import parse_qs, urlparse
 
 from bs4 import BeautifulSoup, Tag
 
-from vps_market.providers.base import Offer, ProviderCrawler
-from vps_market.utils.specs import parse_cpu, parse_memory_mb, parse_storage_gb
-from vps_market.utils.text import normalize_digits, normalize_text, parse_int, price_to_irr
+from crawlers.providers.base import Offer, ProviderCrawler
+from crawlers.utils.specs import parse_cpu, parse_memory_mb, parse_storage_gb
+from crawlers.utils.text import normalize_digits, normalize_text, parse_int, price_to_irr
 
 
 class ArvanCloudCrawler(ProviderCrawler):

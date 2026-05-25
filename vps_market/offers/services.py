@@ -5,9 +5,9 @@ import logging
 from django.db import transaction
 from django.utils import timezone
 
-from vps_market.models import CrawlRun, Provider, ServerOffer
-from vps_market.providers import get_crawlers
-from vps_market.providers.base import Offer, ProviderCrawler
+from crawlers.providers import get_crawlers
+from crawlers.providers.base import Offer, ProviderCrawler
+from offers.models import CrawlRun, Provider, ServerOffer
 
 
 logger = logging.getLogger(__name__)
@@ -21,9 +21,13 @@ def ensure_provider(crawler: ProviderCrawler) -> Provider:
     return provider
 
 
-def crawl_once(provider_slugs: list[str] | None = None, timeout: int = 30) -> dict[str, int]:
+def crawl_once(
+    provider_slugs: list[str] | None = None,
+    timeout: int = 30,
+    cookies: dict[str, str | None] | None = None,
+) -> dict[str, int]:
     summary: dict[str, int] = {}
-    for crawler in get_crawlers(provider_slugs=provider_slugs, timeout=timeout):
+    for crawler in get_crawlers(provider_slugs=provider_slugs, timeout=timeout, cookies=cookies):
         summary[crawler.slug] = crawl_provider(crawler)
     return summary
 
@@ -33,8 +37,6 @@ def crawl_provider(crawler: ProviderCrawler) -> int:
     try:
         logger.info("Crawling provider=%s", crawler.slug)
         offers = crawler.crawl()
-        print('*' * 40)
-        print(f'offers: {offers}')
         seen_at = timezone.now()
         with transaction.atomic():
             provider = ensure_provider(crawler)

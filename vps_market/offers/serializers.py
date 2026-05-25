@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from vps_market.models import Provider, ServerOffer
+from offers.models import Provider, ServerOffer
 
 
 class ProviderSerializer(serializers.ModelSerializer):

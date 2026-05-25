@@ -3,7 +3,7 @@ from __future__ import annotations
 from django.apps import AppConfig
 
 
-class VpsMarketConfig(AppConfig):
+class OffersConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
-    name = "vps_market"
-    verbose_name = "VPS Market"
+    name = "offers"
+    verbose_name = "Offers"

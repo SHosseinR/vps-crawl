@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-load_dotenv(BASE_DIR / ".env")
+ROOT_DIR = BASE_DIR.parent
+load_dotenv(ROOT_DIR / ".env")
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-me")
 DEBUG = os.getenv("DJANGO_DEBUG", "false").lower() in {"1", "true", "yes"}
@@ -22,7 +23,8 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
-    "vps_market",
+    "drf_spectacular",
+    "offers",
 ]
 
 MIDDLEWARE = [
@@ -35,7 +37,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "config.urls"
+ROOT_URLCONF = "vps_market.urls"
 
 TEMPLATES = [
     {
@@ -53,7 +55,7 @@ TEMPLATES = [
     }
 ]
 
-WSGI_APPLICATION = "config.wsgi.application"
+WSGI_APPLICATION = "vps_market.wsgi.application"
 
 
 def database_config() -> dict[str, object]:
@@ -85,8 +87,16 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [],
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": int(os.getenv("API_PAGE_SIZE", "50")),
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "VPS Market API",
+    "DESCRIPTION": "Normalized VPS, cloud container, and GPU server offers.",
+    "VERSION": "0.1.0",
+    "SERVE_INCLUDE_SCHEMA": False,
 }
 
 CRAWL_INTERVAL_MINUTES = int(os.getenv("CRAWL_INTERVAL_MINUTES", "360"))
@@ -97,3 +107,8 @@ CRAWL_PROVIDERS = tuple(
 )
 HTTP_TIMEOUT_SECONDS = int(os.getenv("HTTP_TIMEOUT_SECONDS", "30"))
 LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+
+CRAWLER_COOKIES = {
+    "arvancloud": os.getenv("ARVANCLOUD_COOKIE") or None,
+    "iranserver": os.getenv("IRANSERVER_COOKIE") or None,
+}

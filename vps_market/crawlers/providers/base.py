@@ -39,31 +39,45 @@ class ProviderCrawler:
     display_name: str
     base_url: str
 
-    def __init__(self, timeout: int = 30) -> None:
+    def __init__(self, timeout: int = 30, cookie: str | None = None) -> None:
         self.timeout = timeout
+        self.cookie = cookie
         self.session = requests.Session()
-        self.session.headers.update(
-            {
-                "User-Agent": (
-                    "Mozilla/5.0 (compatible; VPSMarketCrawler/0.1; "
-                    "+https://example.local/vps-market)"
-                ),
-                "Accept": "text/html,application/json;q=0.9,*/*;q=0.8",
-            }
-        )
+        # self.session.headers.update(
+        #     {
+        #         "User-Agent": (
+        #             "Mozilla/5.0 (compatible; VPSMarketCrawler/0.1; "
+        #             "+https://example.local/vps-market)"
+        #         ),
+        #         "Accept": "text/html,application/json;q=0.9,*/*;q=0.8",
+        #     }
+        # )
 
     def crawl(self) -> list[Offer]:
         raise NotImplementedError
 
+    def _headers(self, cookie: str | None = None, extra: dict[str, str] | None = None) -> dict[str, str]:
+        headers = dict(extra or {})
+        request_cookie = cookie or self.cookie
+        if request_cookie:
+            headers["Cookie"] = request_cookie
+        return headers
+
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
-    def get_text(self, url: str) -> str:
-        response = self.session.get(url, timeout=self.timeout)
+    def get_text(self, url: str, cookie: str | None = None) -> str:
+        response = self.session.get(url, headers=self._headers(cookie), timeout=self.timeout)
         response.raise_for_status()
         response.encoding = response.apparent_encoding or response.encoding
         return response.text
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
-    def post_json(self, url: str, data: dict[str, Any]) -> dict[str, Any]:
-        response = self.session.post(url, data=data, timeout=self.timeout)
+    def post_form_json(self, url: str, body: str, cookie: str | None = None) -> dict[str, Any]:
+        response = self.session.post(
+            url,
+            data=body,
+            headers=self._headers(cookie, {"Content-Type": "application/x-www-form-urlencoded"}),
+            timeout=self.timeout,
+        )
+        # print(f'{url=}, {body=}, {response.status_code=}, {response.text[:200]=}')
         response.raise_for_status()
         return response.json()
