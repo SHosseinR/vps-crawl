@@ -13,5 +13,6 @@ COPY pyproject.toml README.md ./
 COPY vps_market ./vps_market
 
 RUN pip install --no-cache-dir .
+RUN python vps_market/manage.py collectstatic --noinput
 
 CMD ["gunicorn", "--chdir", "vps_market", "vps_market.wsgi:application", "--bind", "0.0.0.0:8000"]

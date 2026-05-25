@@ -31,7 +31,7 @@ services:
 
   web:
     build: .
-    command: gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000
+    command: sh -c "python vps_market/manage.py collectstatic --noinput && gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000"
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
       DJANGO_SECRET_KEY: dev-only-change-me

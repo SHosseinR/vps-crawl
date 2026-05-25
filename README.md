@@ -28,6 +28,8 @@ Services:
 - `web`: API on `http://localhost:8000`
 - `crawler`: periodic crawl worker using the Django ORM
 
+Static files are served by WhiteNoise. The web container runs `collectstatic` on startup so Django admin and Swagger assets work even when `./vps_market` is bind-mounted into the container.
+
 ## Run one crawl
 
 ```powershell
