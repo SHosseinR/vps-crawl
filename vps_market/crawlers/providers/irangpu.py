@@ -14,6 +14,7 @@ class IranGpuCrawler(ProviderCrawler):
     display_name = "IranGPU"
     base_url = "https://irangpu.com"
     pricing_url = "https://irangpu.com/rent-gpu-server/"
+    source_url = "https://irangpu.com/"
 
     def crawl(self) -> list[Offer]:
         return self.parse_pricing_page(self.get_text(self.pricing_url))
@@ -48,7 +49,6 @@ class IranGpuCrawler(ProviderCrawler):
         specs = extract_specs_from_lines(vm_feature_lines)
         city = _city_from_feature_lines(feature_lines)
         button = card.select_one("a.elementor-button-link")
-        href = button.get("href") if isinstance(button, Tag) else None
         order_id = button.get("id") if isinstance(button, Tag) else None
 
         return Offer(
@@ -73,8 +73,8 @@ class IranGpuCrawler(ProviderCrawler):
             gpu_model=_gpu_model(name),
             gpu_memory_mb=parse_gpu_memory_mb(gpu_line),
             available=available,
-            buy_url=_absolute_url(href),
-            source_url=self.pricing_url,
+            buy_url=self.pricing_url,
+            source_url=self.source_url,
             raw_payload={"price_text": price_text, "features": feature_lines},
         )
 
@@ -136,14 +136,6 @@ def _city_from_feature_lines(feature_lines: list[str]) -> str | None:
             continue
         return normalize_text(line).title()
     return None
-
-
-def _absolute_url(href: str | None) -> str | None:
-    if not href or href == "#":
-        return None
-    if href.startswith("http"):
-        return href
-    return f"https://irangpu.com/{href.lstrip('/')}"
 
 
 def _slugify(value: str) -> str:

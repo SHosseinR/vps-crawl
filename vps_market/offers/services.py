@@ -157,36 +157,27 @@ def normalize_gpu_model_name(model: str | None) -> str:
     normalized = re.sub(r"^\s*nvidia[\s\-_]+", "", normalized, flags=re.IGNORECASE)
     normalized = re.sub(r"\s*\([^)]*\)\s*$", "", normalized).strip()
     normalized = normalized.replace("-", " ").replace("_", " ")
+    normalized = re.sub(r"\bRTX(?=\d)", "RTX ", normalized, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", normalized).strip() or "Unknown GPU"
 
 
 def get_or_create_gpu_spec(model: str, memory_mb: int | None) -> GpuSpec:
     if memory_mb is None:
-        existing_with_memory = (
-            GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=False)
-            .order_by("memory_mb", "id")
-            .first()
-        )
+        existing_with_memory = find_gpu_spec(model, memory="known")
         if existing_with_memory:
-            return existing_with_memory
+            return update_gpu_spec_identity(existing_with_memory, model)
 
-        null_memory_spec = GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=True).order_by("id").first()
+        null_memory_spec = find_gpu_spec(model, memory=None)
         if null_memory_spec:
-            if null_memory_spec.model != model:
-                null_memory_spec.model = model
-                null_memory_spec.save(update_fields=["model", "updated_at"])
-            return null_memory_spec
+            return update_gpu_spec_identity(null_memory_spec, model)
 
         return GpuSpec.objects.create(model=model, memory_mb=None)
 
-    exact = GpuSpec.objects.filter(model__iexact=model, memory_mb=memory_mb).order_by("id").first()
+    exact = find_gpu_spec(model, memory=memory_mb)
     if exact:
-        if exact.model != model:
-            exact.model = model
-            exact.save(update_fields=["model", "updated_at"])
-        return exact
+        return update_gpu_spec_identity(exact, model)
 
-    null_memory_spec = GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=True).order_by("id").first()
+    null_memory_spec = find_gpu_spec(model, memory=None)
     if null_memory_spec:
         null_memory_spec.model = model
         null_memory_spec.memory_mb = memory_mb
@@ -194,6 +185,32 @@ def get_or_create_gpu_spec(model: str, memory_mb: int | None) -> GpuSpec:
         return null_memory_spec
 
     return GpuSpec.objects.create(model=model, memory_mb=memory_mb)
+
+
+def find_gpu_spec(model: str, memory: int | str | None) -> GpuSpec | None:
+    if memory == "known":
+        queryset = GpuSpec.objects.filter(memory_mb__isnull=False).order_by("memory_mb", "id")
+    elif memory is None:
+        queryset = GpuSpec.objects.filter(memory_mb__isnull=True).order_by("id")
+    else:
+        queryset = GpuSpec.objects.filter(memory_mb=memory).order_by("id")
+
+    key = gpu_model_key(model)
+    for gpu_spec in queryset:
+        if gpu_model_key(gpu_spec.model) == key:
+            return gpu_spec
+    return None
+
+
+def update_gpu_spec_identity(gpu_spec: GpuSpec, model: str) -> GpuSpec:
+    if gpu_spec.model != model:
+        gpu_spec.model = model
+        gpu_spec.save(update_fields=["model", "updated_at"])
+    return gpu_spec
+
+
+def gpu_model_key(model: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", model.lower())
 
 
 def mark_missing_offers_unavailable(provider: Provider, seen_at) -> int:

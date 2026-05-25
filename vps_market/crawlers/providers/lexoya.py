@@ -10,6 +10,8 @@ class LexoyaCrawler(ProviderCrawler):
     slug = "lexoya"
     display_name = "Lexoya"
     base_url = "https://lexoya.com"
+    buy_url = "https://lexoya.com/landings/gpu"
+    source_url = "https://lexoya.com/"
     api_urls = (
         "https://api.ir01.lexoya.com/v1/gpus/1005",
         "https://api.ir01.lexoya.com/v1/gpus/1004",
@@ -57,7 +59,8 @@ class LexoyaCrawler(ProviderCrawler):
                     gpu_model=name,
                     gpu_memory_mb=_gb_to_mb(item.get("VramGB")),
                     available=available,
-                    source_url=api_url,
+                    buy_url=self.buy_url,
+                    source_url=self.source_url,
                     raw_payload=item,
                 )
             )

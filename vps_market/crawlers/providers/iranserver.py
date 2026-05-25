@@ -81,7 +81,7 @@ class IranServerCrawler(ProviderCrawler):
             traffic_gb=_numeric_field(item.get("traffic")),
             has_gpu=False,
             available=True,
-            buy_url=f"https://hub.iranserver.com/cart.php?a=add&pid={product_id}" if product_id else None,
+            buy_url=self.plans_api_url,
             source_url=self.plans_api_url,
             raw_payload=item,
         )
@@ -162,7 +162,7 @@ class IranServerCrawler(ProviderCrawler):
             bandwidth_mbps=specs["bandwidth_mbps"],
             has_gpu=False,
             available=available,
-            buy_url=f"https://hub.iranserver.com/cart.php?a=add&pid={product_id}" if product_id else None,
+            buy_url=url,
             source_url=url,
             raw_payload={"group": group_name, "tab_name": tab_name, "tab": tab, "features": feature_lines},
         )
@@ -239,7 +239,7 @@ class IranServerCrawler(ProviderCrawler):
             gpu_model=gpu_model,
             gpu_memory_mb=parse_gpu_memory_mb(gpu_line),
             available=available,
-            buy_url=normalize_text(item.get("orderlink")) or None,
+            buy_url=self.gpu_url,
             source_url=self.gpu_url,
             raw_payload={"plan_index": plan_index, "item": item, "details": details},
         )

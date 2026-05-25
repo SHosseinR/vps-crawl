@@ -10,6 +10,8 @@ class FerdowsiCloudCrawler(ProviderCrawler):
     slug = "ferdowsi_cloud"
     display_name = "Ferdowsi Cloud"
     base_url = "https://ferdowsi.cloud"
+    buy_url = "https://ferdowsi.cloud/fa/services/gpu"
+    source_url = "https://ferdowsi.cloud"
     gpu_list_url = "https://api.ferdowsi.cloud/api/v2/sm/mhd-fum1/flavors/gpus"
     flavors_url = "https://api.ferdowsi.cloud/api/v2/planning/mhd-fum1/flavors"
 
@@ -75,7 +77,8 @@ class FerdowsiCloudCrawler(ProviderCrawler):
             gpu_model=gpu_model,
             gpu_memory_mb=gpu_memory_mb * gpu_count if gpu_memory_mb is not None else None,
             available=not bool(plan.get("busy")) and not bool(gpu_item.get("busy")),
-            source_url=self.flavors_url,
+            buy_url=self.buy_url,
+            source_url=self.source_url,
             raw_payload={"gpu": gpu_item, "plan": plan},
         )
 
