@@ -35,6 +35,8 @@ class ServerOfferSerializer(serializers.ModelSerializer):
             "category",
             "billing_period",
             "price_amount_irr",
+            "price_amount_toman",
+            "equivalent_hourly_price_toman",
             "original_price_amount",
             "original_price_currency",
             "cpu_cores",

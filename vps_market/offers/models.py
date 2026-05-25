@@ -50,6 +50,8 @@ class ServerOffer(models.Model):
     category = models.CharField(max_length=160, blank=True, null=True)
     billing_period = models.CharField(max_length=40, default="monthly")
     price_amount_irr = models.BigIntegerField(blank=True, null=True)
+    price_amount_toman = models.BigIntegerField(blank=True, null=True)
+    equivalent_hourly_price_toman = models.DecimalField(max_digits=18, decimal_places=2, blank=True, null=True)
     original_price_amount = models.BigIntegerField(blank=True, null=True)
     original_price_currency = models.CharField(max_length=40, blank=True, null=True)
     cpu_cores = models.FloatField(blank=True, null=True)
@@ -69,7 +71,7 @@ class ServerOffer(models.Model):
 
     class Meta:
         db_table = "server_offers"
-        ordering = ["price_amount_irr", "provider__slug", "name"]
+        ordering = ["equivalent_hourly_price_toman", "provider__slug", "name"]
         constraints = [
             models.UniqueConstraint(
                 fields=["provider", "source_offer_id", "region", "region_detail", "billing_period"],
@@ -80,6 +82,8 @@ class ServerOffer(models.Model):
             models.Index(fields=["provider", "region"], name="offer_provider_region_idx"),
             models.Index(fields=["region_detail"], name="offer_region_detail_idx"),
             models.Index(fields=["price_amount_irr"], name="offer_price_idx"),
+            models.Index(fields=["price_amount_toman"], name="offer_price_toman_idx"),
+            models.Index(fields=["equivalent_hourly_price_toman"], name="offer_hourly_toman_idx"),
             models.Index(fields=["has_gpu"], name="offer_gpu_idx"),
             models.Index(fields=["available"], name="offer_available_idx"),
             models.Index(fields=["cpu_cores"], name="offer_cpu_idx"),

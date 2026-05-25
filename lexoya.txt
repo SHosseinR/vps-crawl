@@ -1,0 +1,47 @@
+# lexoya
+
+these 2 apis for gpu servers:
+https://api.ir01.lexoya.com/v1/gpus/1005
+https://api.ir01.lexoya.com/v1/gpus/1004
+
+sample response:
+{
+    "status": "success",
+    "message": "GPUs",
+    "data": [
+        {
+            "ID": "qom-2-rtx4090-1",
+            "CreatedAt": "2025-10-23T15:30:00+03:30",
+            "UpdatedAt": "2026-04-25T00:11:33.680805+03:30",
+            "DeletedAt": null,
+            "Name": "RTX 4090",
+            "IsAvailable": false,
+            "LocationID": 1004,
+            "Location": {
+                "ID": 1004,
+                "CreatedAt": "2025-10-21T10:49:16.481107+03:30",
+                "UpdatedAt": "2026-05-17T16:47:05.09718+03:30",
+                "DeletedAt": null,
+                "accountID": "",
+                "clusterID": "iran-03",
+                "country": "Iran",
+                "name": "Qom-2",
+                "flag": "https://s3.lexoya.com/assets/iran.svg",
+                "initials": "qom2",
+                "provider": "Lexoya",
+                "osList": null,
+                "plans": null,
+                "tags": null,
+                "status": "available",
+                "totalS3CapacityGB": 0,
+                "availableS3CapacityGB": 0
+            },
+            "VramGB": 24,
+            "CUDACores": 16384,
+            "HourlyPrice": 99000,
+            "Status": "Disabled",
+            "MinReserveDay": 7,
+            "MonthlyPrice": 45000000
+        },...
+    ]
+}

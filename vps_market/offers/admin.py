@@ -13,7 +13,17 @@ class ProviderAdmin(admin.ModelAdmin):
 
 @admin.register(ServerOffer)
 class ServerOfferAdmin(admin.ModelAdmin):
-    list_display = ["provider", "name", "region", "region_detail", "billing_period", "price_amount_irr", "has_gpu", "available"]
+    list_display = [
+        "provider",
+        "name",
+        "region",
+        "region_detail",
+        "billing_period",
+        "price_amount_toman",
+        "equivalent_hourly_price_toman",
+        "has_gpu",
+        "available",
+    ]
     list_filter = ["provider", "region", "billing_period", "has_gpu", "available"]
     search_fields = ["name", "source_offer_id", "gpu__model", "category", "region_detail"]
     readonly_fields = ["first_seen_at", "last_seen_at", "updated_at", "raw_payload"]

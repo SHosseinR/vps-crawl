@@ -16,7 +16,6 @@ import {
   MonitorUp,
   Search,
   Server,
-  Sparkles,
   Zap,
 } from "lucide-react";
 import "./styles.css";
@@ -24,45 +23,69 @@ import "./styles.css";
 const PAGE_SIZE = 50;
 
 const SORT_OPTIONS = [
-  ["price_amount_irr", "Lowest price"],
-  ["-price_amount_irr", "Highest price"],
-  ["-cpu_cores", "Most CPU"],
-  ["-ram_mb", "Most RAM"],
-  ["-disk_gb", "Most disk"],
-  ["-traffic_gb", "Most traffic"],
-  ["-gpu_memory_mb", "Most GPU VRAM"],
-  ["provider", "Provider"],
+  ["equivalent_hourly_price_toman", "ارزان ترین بر اساس قیمت ساعتی"],
+  ["-equivalent_hourly_price_toman", "گران ترین بر اساس قیمت ساعتی"],
+  ["price_amount_toman", "کمترین قیمت دوره ای"],
+  ["-price_amount_toman", "بیشترین قیمت دوره ای"],
+  ["-cpu_cores", "بیشترین CPU"],
+  ["-ram_mb", "بیشترین RAM"],
+  ["-disk_gb", "بیشترین دیسک"],
+  ["-traffic_gb", "بیشترین ترافیک"],
+  ["-gpu_memory_mb", "بیشترین حافظه GPU"],
+  ["provider", "ارائه دهنده"],
 ];
 
 const EMPTY_FILTERS = {
   search: "",
   provider: "",
   region: "",
-  region_detail: "",
   billing_period: "",
   disk_type: "",
-  min_price_irr: "",
-  max_price_irr: "",
+  min_price_toman: "",
+  max_price_toman: "",
   min_cpu_cores: "",
   min_ram_mb: "",
   min_disk_gb: "",
   gpu_model: "",
   min_gpu_memory_mb: "",
-  ordering: "price_amount_irr",
+  ordering: "equivalent_hourly_price_toman",
+};
+
+const PERIOD_LABELS = {
+  hourly: "ساعتی",
+  hour: "ساعتی",
+  daily: "روزانه",
+  day: "روزانه",
+  weekly: "هفتگی",
+  week: "هفتگی",
+  monthly: "ماهیانه",
+  month: "ماهیانه",
+  yearly: "سالانه",
+  year: "سالانه",
+};
+
+const REGION_LABELS = {
+  iran: "ایران",
+  europe: "اروپا",
+  germany: "آلمان",
+  france: "فرانسه",
+  finland: "فنلاند",
+  usa: "آمریکا",
+  unknown: "نامشخص",
 };
 
 function App() {
   return (
     <Router>
-      <div className="app-shell">
+      <div className="app-shell" dir="rtl">
         <header className="topbar">
           <Link to="/" className="brand">
             <Server size={22} />
-            <span>VPS Market</span>
+            <span>بازار VPS</span>
           </Link>
           <nav className="nav">
             <NavLink to="/" end>
-              Offers
+              همه سرورها
             </NavLink>
             <NavLink to="/gpu">
               <Zap size={16} />
@@ -94,7 +117,7 @@ function OffersPage({ mode }) {
     fetch("/api/filter-options/")
       .then((response) => response.json())
       .then(setOptions)
-      .catch(() => setOptions({ providers: [], regions: [], region_details: [], disk_types: [], gpu_specs: [] }));
+      .catch(() => setOptions({ providers: [], regions: [], disk_types: [], gpu_specs: [] }));
   }, []);
 
   useEffect(() => {
@@ -109,7 +132,7 @@ function OffersPage({ mode }) {
       })
       .then(setData)
       .catch((err) => {
-        if (err.name !== "AbortError") setError("Could not load offers.");
+        if (err.name !== "AbortError") setError("امکان دریافت پیشنهادها وجود ندارد.");
       })
       .finally(() => setLoading(false));
 
@@ -120,15 +143,22 @@ function OffersPage({ mode }) {
     const next = new URLSearchParams(searchParams);
     if (value) next.set(name, value);
     else next.delete(name);
+    next.delete("region_detail");
     next.delete("page");
     setSearchParams(next);
   };
 
-  const clearFilters = () => setSearchParams(mode === "gpu" ? new URLSearchParams({ ordering: "price_amount_irr" }) : new URLSearchParams());
+  const clearFilters = () => {
+    const next = new URLSearchParams({ ordering: "equivalent_hourly_price_toman" });
+    setSearchParams(next);
+  };
 
   const totalPages = Math.max(1, Math.ceil((data?.count || 0) / PAGE_SIZE));
-  const title = mode === "gpu" ? "GPU Offers" : "Offers";
-  const subtitle = mode === "gpu" ? "Accelerated plans sorted by price" : "Every VM sorted by price";
+  const title = mode === "gpu" ? "سرورهای GPU" : "همه سرورها";
+  const subtitle =
+    mode === "gpu"
+      ? "اول GPU و حافظه گرافیکی را ببین، بعد مشخصات VM را مقایسه کن."
+      : "پیشنهادها بر اساس قیمت معادل ساعتی از ارزان ترین مرتب شده اند.";
 
   return (
     <main className="workspace">
@@ -137,14 +167,14 @@ function OffersPage({ mode }) {
           <h1>{title}</h1>
           <p>{subtitle}</p>
         </div>
-        <GpuAction active={mode === "gpu"} />
+        <ModeSwitch activeMode={mode} />
       </section>
 
       <section className="content-grid">
         <aside className="filters-panel">
           <div className="panel-title">
             <Filter size={18} />
-            <span>Filters</span>
+            <span>فیلترها</span>
           </div>
           <FilterControls filters={filters} options={options} mode={mode} onChange={updateFilter} onClear={clearFilters} />
         </aside>
@@ -152,11 +182,11 @@ function OffersPage({ mode }) {
         <section className="offers-panel">
           <div className="list-toolbar">
             <div className="count">
-              <strong>{data?.count ?? 0}</strong>
-              <span>matches</span>
+              <strong>{formatNumber(data?.count ?? 0)}</strong>
+              <span>نتیجه</span>
             </div>
             <label className="select-wrap">
-              <span>Sort</span>
+              <span>مرتب سازی</span>
               <select value={filters.ordering} onChange={(event) => updateFilter("ordering", event.target.value)}>
                 {SORT_OPTIONS.map(([value, label]) => (
                   <option key={value} value={value}>
@@ -168,8 +198,8 @@ function OffersPage({ mode }) {
           </div>
 
           {error && <div className="state-box error">{error}</div>}
-          {loading && <div className="state-box">Loading offers...</div>}
-          {!loading && !error && data?.results?.length === 0 && <div className="state-box">No offers found.</div>}
+          {loading && <div className="state-box">در حال دریافت پیشنهادها...</div>}
+          {!loading && !error && data?.results?.length === 0 && <div className="state-box">پیشنهادی پیدا نشد.</div>}
 
           <div className="offer-list">
             {data?.results?.map((offer) => (
@@ -195,39 +225,36 @@ function OffersPage({ mode }) {
   );
 }
 
-function GpuAction({ active }) {
-  if (active) {
-    return (
-      <Link to="/" className="gpu-action active">
-        <Sparkles size={20} />
-        All Offers
-      </Link>
-    );
-  }
+function ModeSwitch({ activeMode }) {
   return (
-    <Link to="/gpu" className="gpu-action">
-      <Zap size={22} />
-      GPU Mode
-    </Link>
+    <div className="mode-switch" aria-label="نوع پیشنهادها">
+      <Link to="/" className={activeMode === "all" ? "active" : ""}>
+        <Server size={19} />
+        همه سرورها
+      </Link>
+      <Link to="/gpu" className={activeMode === "gpu" ? "active gpu" : "gpu"}>
+        <Zap size={21} />
+        فقط GPU
+      </Link>
+    </div>
   );
 }
 
 function FilterControls({ filters, options, mode, onChange, onClear }) {
-  const regionDetails = (options?.region_details || []).filter((item) => !filters.region || item.region === filters.region);
   const gpuSpecs = options?.gpu_specs || [];
 
   return (
     <div className="filters">
       <label className="input-wrap wide">
-        <span>Search</span>
+        <span>جستجو</span>
         <div className="search-input">
           <Search size={16} />
-          <input value={filters.search} onChange={(event) => onChange("search", event.target.value)} placeholder="RTX, Tehran, CX..." />
+          <input value={filters.search} onChange={(event) => onChange("search", event.target.value)} placeholder="RTX، تهران، CX..." />
         </div>
       </label>
 
-      <Select label="Provider" value={filters.provider} onChange={(value) => onChange("provider", value)}>
-        <option value="">Any</option>
+      <Select label="ارائه دهنده" value={filters.provider} onChange={(value) => onChange("provider", value)}>
+        <option value="">همه</option>
         {(options?.providers || []).map((provider) => (
           <option key={provider.slug} value={provider.slug}>
             {provider.name}
@@ -235,35 +262,26 @@ function FilterControls({ filters, options, mode, onChange, onClear }) {
         ))}
       </Select>
 
-      <Select label="Region" value={filters.region} onChange={(value) => onChange("region", value)}>
-        <option value="">Any</option>
+      <Select label="منطقه" value={filters.region} onChange={(value) => onChange("region", value)}>
+        <option value="">همه</option>
         {(options?.regions || []).map((region) => (
           <option key={region} value={region}>
-            {titleCase(region)}
+            {regionLabel(region)}
           </option>
         ))}
       </Select>
 
-      <Select label="Region detail" value={filters.region_detail} onChange={(value) => onChange("region_detail", value)}>
-        <option value="">Any</option>
-        {regionDetails.map((item) => (
-          <option key={`${item.region}:${item.region_detail}`} value={item.region_detail}>
-            {item.region_detail}
-          </option>
-        ))}
-      </Select>
-
-      <Select label="Billing" value={filters.billing_period} onChange={(value) => onChange("billing_period", value)}>
-        <option value="">Any</option>
+      <Select label="دوره پرداخت" value={filters.billing_period} onChange={(value) => onChange("billing_period", value)}>
+        <option value="">همه</option>
         {(options?.billing_periods || []).map((period) => (
           <option key={period} value={period}>
-            {titleCase(period)}
+            {periodLabel(period)}
           </option>
         ))}
       </Select>
 
-      <Select label="Disk" value={filters.disk_type} onChange={(value) => onChange("disk_type", value)}>
-        <option value="">Any</option>
+      <Select label="نوع دیسک" value={filters.disk_type} onChange={(value) => onChange("disk_type", value)}>
+        <option value="">همه</option>
         {(options?.disk_types || []).map((disk) => (
           <option key={disk} value={disk}>
             {disk}
@@ -272,16 +290,16 @@ function FilterControls({ filters, options, mode, onChange, onClear }) {
       </Select>
 
       <div className="number-grid">
-        <NumberInput label="Min price IRR" value={filters.min_price_irr} onChange={(value) => onChange("min_price_irr", value)} />
-        <NumberInput label="Max price IRR" value={filters.max_price_irr} onChange={(value) => onChange("max_price_irr", value)} />
-        <NumberInput label="Min CPU" value={filters.min_cpu_cores} onChange={(value) => onChange("min_cpu_cores", value)} />
-        <NumberInput label="Min RAM MB" value={filters.min_ram_mb} onChange={(value) => onChange("min_ram_mb", value)} />
-        <NumberInput label="Min disk GB" value={filters.min_disk_gb} onChange={(value) => onChange("min_disk_gb", value)} />
-        <NumberInput label="Min VRAM MB" value={filters.min_gpu_memory_mb} onChange={(value) => onChange("min_gpu_memory_mb", value)} disabled={mode !== "gpu" && !filters.gpu_model} />
+        <NumberInput label="حداقل قیمت (تومان)" value={filters.min_price_toman} onChange={(value) => onChange("min_price_toman", value)} />
+        <NumberInput label="حداکثر قیمت (تومان)" value={filters.max_price_toman} onChange={(value) => onChange("max_price_toman", value)} />
+        <NumberInput label="حداقل CPU" value={filters.min_cpu_cores} onChange={(value) => onChange("min_cpu_cores", value)} />
+        <NumberInput label="حداقل RAM (MB)" value={filters.min_ram_mb} onChange={(value) => onChange("min_ram_mb", value)} />
+        <NumberInput label="حداقل دیسک (GB)" value={filters.min_disk_gb} onChange={(value) => onChange("min_disk_gb", value)} />
+        <NumberInput label="حداقل VRAM (MB)" value={filters.min_gpu_memory_mb} onChange={(value) => onChange("min_gpu_memory_mb", value)} disabled={mode !== "gpu" && !filters.gpu_model} />
       </div>
 
-      <Select label="GPU model" value={filters.gpu_model} onChange={(value) => onChange("gpu_model", value)}>
-        <option value="">Any</option>
+      <Select label="مدل GPU" value={filters.gpu_model} onChange={(value) => onChange("gpu_model", value)}>
+        <option value="">همه</option>
         {gpuSpecs.map((gpu) => (
           <option key={gpu.id} value={gpu.model}>
             {gpu.model}{gpu.memory_mb ? ` ${formatMemory(gpu.memory_mb)}` : ""}
@@ -290,7 +308,7 @@ function FilterControls({ filters, options, mode, onChange, onClear }) {
       </Select>
 
       <button className="clear-btn" type="button" onClick={onClear}>
-        Clear
+        پاک کردن فیلترها
       </button>
     </div>
   );
@@ -323,7 +341,7 @@ function OfferRow({ offer, expanded, onToggle, gpuFirst }) {
   return (
     <article className={`offer-row ${offer.has_gpu ? "gpu-offer" : ""}`}>
       <div className="offer-main">
-        <button className="expand-btn" onClick={onToggle} aria-label={expanded ? "Collapse" : "Expand"}>
+        <button className="expand-btn" onClick={onToggle} aria-label={expanded ? "بستن جزئیات" : "نمایش جزئیات"}>
           {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
         </button>
         <div className="offer-heading">
@@ -334,23 +352,30 @@ function OfferRow({ offer, expanded, onToggle, gpuFirst }) {
           <div className="meta-line">
             {providerUrl ? (
               <a href={providerUrl} target="_blank" rel="noreferrer" className="provider-link">
-                {offer.provider?.name || "Provider"}
+                {offer.provider?.name || "ارائه دهنده"}
                 <ExternalLink size={13} />
               </a>
             ) : (
               <span>{offer.provider?.name}</span>
             )}
-            <span>{titleCase(offer.region || "")}</span>
+            <span>{regionLabel(offer.region)}</span>
             {offer.region_detail && <span>{offer.region_detail}</span>}
-            <span>{titleCase(offer.billing_period)}</span>
           </div>
         </div>
         <div className="price-box">
-          <strong>{formatPrice(offer.price_amount_irr)}</strong>
-          <span>IRR</span>
+          <div className="price-line">
+            <strong>{formatPrice(offer.price_amount_toman)}</strong>
+            <span>تومان</span>
+          </div>
+          <div className="period-line">
+            <b>{periodLabel(offer.billing_period)}</b>
+            {offer.equivalent_hourly_price_toman && (
+              <small>معادل ساعتی {formatPrice(offer.equivalent_hourly_price_toman)} تومان</small>
+            )}
+          </div>
         </div>
         <a className="buy-btn" href={offer.buy_url || offer.source_url || providerUrl || "#"} target="_blank" rel="noreferrer">
-          Buy
+          خرید
           <ExternalLink size={16} />
         </a>
       </div>
@@ -363,16 +388,17 @@ function OfferRow({ offer, expanded, onToggle, gpuFirst }) {
 
       {expanded && (
         <div className="details">
-          <DetailBlock title="VM specs" items={vmSpecs(offer)} />
-          {offer.gpu && <DetailBlock title="GPU specs" items={gpuSpecs(offer)} />}
+          {offer.gpu && <DetailBlock title="مشخصات GPU" items={gpuSpecs(offer)} />}
+          <DetailBlock title="مشخصات VM" items={vmSpecs(offer)} />
           <DetailBlock
-            title="Market"
+            title="بازار"
             items={[
-              { label: "Country", value: offer.country || "-" },
-              { label: "City", value: offer.city || "-" },
-              { label: "Category", value: offer.category || "-" },
-              { label: "Availability", value: offer.available ? "Available" : "Unavailable" },
-              { label: "Source ID", value: offer.source_offer_id },
+              { label: "کشور", value: offer.country || "-" },
+              { label: "شهر", value: offer.city || "-" },
+              { label: "منطقه دقیق", value: offer.region_detail || "-" },
+              { label: "دسته بندی", value: offer.category || "-" },
+              { label: "وضعیت", value: offer.available ? "موجود" : "ناموجود" },
+              { label: "شناسه منبع", value: offer.source_offer_id },
             ]}
           />
         </div>
@@ -410,14 +436,14 @@ function DetailBlock({ title, items }) {
 function Pagination({ page, totalPages, setPage }) {
   return (
     <div className="pagination">
-      <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1}>
-        <ChevronLeft size={17} />
+      <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page <= 1} aria-label="صفحه قبل">
+        <ChevronRight size={17} />
       </button>
       <span>
-        {page} / {totalPages}
+        {formatNumber(page)} / {formatNumber(totalPages)}
       </span>
-      <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages}>
-        <ChevronRight size={17} />
+      <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page >= totalPages} aria-label="صفحه بعد">
+        <ChevronLeft size={17} />
       </button>
     </div>
   );
@@ -425,11 +451,11 @@ function Pagination({ page, totalPages, setPage }) {
 
 function vmSpecs(offer) {
   return [
-    { icon: Cpu, label: "CPU", value: offer.cpu_cores ? `${formatNumber(offer.cpu_cores)} cores` : "-" },
+    { icon: Cpu, label: "CPU", value: offer.cpu_cores ? `${formatNumber(offer.cpu_cores)} هسته` : "-" },
     { icon: MemoryStick, label: "RAM", value: formatMemory(offer.ram_mb) },
-    { icon: HardDrive, label: "Disk", value: `${formatNumber(offer.disk_gb)} GB${offer.disk_type ? ` ${offer.disk_type}` : ""}` },
-    { icon: Gauge, label: "Traffic", value: offer.traffic_gb ? `${formatNumber(offer.traffic_gb)} GB` : "-" },
-    { icon: MonitorUp, label: "Bandwidth", value: offer.bandwidth_mbps ? `${formatNumber(offer.bandwidth_mbps)} Mbps` : "-" },
+    { icon: HardDrive, label: "دیسک", value: `${formatNumber(offer.disk_gb)} GB${offer.disk_type ? ` ${offer.disk_type}` : ""}` },
+    { icon: Gauge, label: "ترافیک", value: offer.traffic_gb ? `${formatNumber(offer.traffic_gb)} GB` : "-" },
+    { icon: MonitorUp, label: "پهنای باند", value: offer.bandwidth_mbps ? `${formatNumber(offer.bandwidth_mbps)} Mbps` : "-" },
   ];
 }
 
@@ -447,7 +473,7 @@ function filtersFromParams(params, mode) {
     filters[key] = params.get(key) || filters[key];
   }
   if (mode === "gpu") {
-    filters.ordering = params.get("ordering") || "price_amount_irr";
+    filters.ordering = params.get("ordering") || "equivalent_hourly_price_toman";
   }
   return filters;
 }
@@ -463,8 +489,8 @@ function buildOfferQuery(filters, page, mode) {
 }
 
 function formatPrice(value) {
-  if (value === null || value === undefined) return "Contact";
-  return Number(value).toLocaleString("en-US");
+  if (value === null || value === undefined || value === "") return "تماس بگیرید";
+  return Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 2 });
 }
 
 function formatMemory(value) {
@@ -476,13 +502,15 @@ function formatMemory(value) {
 function formatNumber(value) {
   if (value === null || value === undefined || value === "") return "-";
   const number = Number(value);
-  return Number.isInteger(number) ? number.toLocaleString("en-US") : number.toLocaleString("en-US", { maximumFractionDigits: 1 });
+  return Number.isInteger(number) ? number.toLocaleString("fa-IR") : number.toLocaleString("fa-IR", { maximumFractionDigits: 1 });
 }
 
-function titleCase(value) {
-  return String(value || "")
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
+function periodLabel(value) {
+  return PERIOD_LABELS[String(value || "").toLowerCase()] || value || "-";
+}
+
+function regionLabel(value) {
+  return REGION_LABELS[String(value || "").toLowerCase()] || value || "-";
 }
 
 createRoot(document.getElementById("root")).render(<App />);

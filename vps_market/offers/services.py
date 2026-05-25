@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils import timezone
@@ -76,6 +77,11 @@ def offer_defaults(offer: Offer, seen_at) -> dict[str, object]:
         "city": offer.city,
         "category": offer.category,
         "price_amount_irr": offer.price_amount_irr,
+        "price_amount_toman": price_amount_toman(offer.price_amount_irr),
+        "equivalent_hourly_price_toman": equivalent_hourly_price_toman(
+            offer.price_amount_irr,
+            offer.billing_period,
+        ),
         "original_price_amount": offer.original_price_amount,
         "original_price_currency": offer.original_price_currency,
         "cpu_cores": offer.cpu_cores,
@@ -91,6 +97,35 @@ def offer_defaults(offer: Offer, seen_at) -> dict[str, object]:
         "raw_payload": offer.raw_payload,
         "last_seen_at": seen_at,
     }
+
+
+def price_amount_toman(price_amount_irr: int | None) -> int | None:
+    if price_amount_irr is None:
+        return None
+    return int(Decimal(price_amount_irr) / Decimal("10"))
+
+
+def equivalent_hourly_price_toman(price_amount_irr: int | None, billing_period: str | None) -> Decimal | None:
+    toman = price_amount_toman(price_amount_irr)
+    if toman is None:
+        return None
+
+    period_hours = {
+        "hour": Decimal("1"),
+        "hourly": Decimal("1"),
+        "day": Decimal("24"),
+        "daily": Decimal("24"),
+        "week": Decimal("168"),
+        "weekly": Decimal("168"),
+        "month": Decimal("720"),
+        "monthly": Decimal("720"),
+        "year": Decimal("8760"),
+        "yearly": Decimal("8760"),
+        "annual": Decimal("8760"),
+        "annually": Decimal("8760"),
+    }
+    hours = period_hours.get((billing_period or "").lower(), Decimal("720"))
+    return (Decimal(toman) / hours).quantize(Decimal("0.01"))
 
 
 def update_offer_gpu(server_offer: ServerOffer, offer: Offer) -> None:

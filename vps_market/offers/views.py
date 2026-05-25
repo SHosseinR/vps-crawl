@@ -31,13 +31,15 @@ class ProviderListAPIView(ListAPIView):
         OpenApiParameter("available", bool),
         OpenApiParameter("min_price_irr", int),
         OpenApiParameter("max_price_irr", int),
+        OpenApiParameter("min_price_toman", int),
+        OpenApiParameter("max_price_toman", int),
         OpenApiParameter("min_cpu_cores", float),
         OpenApiParameter("min_ram_mb", int),
         OpenApiParameter("min_disk_gb", float),
         OpenApiParameter("min_traffic_gb", float),
         OpenApiParameter("min_gpu_memory_mb", int),
         OpenApiParameter("search", str),
-        OpenApiParameter("ordering", str, description="Comma-separated fields, e.g. price_amount_irr,-cpu_cores"),
+        OpenApiParameter("ordering", str, description="Comma-separated fields, e.g. equivalent_hourly_price_toman,-cpu_cores"),
     ]
 )
 class ServerOfferListAPIView(ListAPIView):
@@ -67,6 +69,8 @@ class ServerOfferListAPIView(ListAPIView):
         queryset = _bool_filter(queryset, "available", params.get("available"))
         queryset = _number_filter(queryset, "price_amount_irr", params.get("min_price_irr"), "gte")
         queryset = _number_filter(queryset, "price_amount_irr", params.get("max_price_irr"), "lte")
+        queryset = _number_filter(queryset, "price_amount_toman", params.get("min_price_toman"), "gte")
+        queryset = _number_filter(queryset, "price_amount_toman", params.get("max_price_toman"), "lte")
         queryset = _number_filter(queryset, "cpu_cores", params.get("min_cpu_cores"), "gte")
         queryset = _number_filter(queryset, "ram_mb", params.get("min_ram_mb"), "gte")
         queryset = _number_filter(queryset, "disk_gb", params.get("min_disk_gb"), "gte")
@@ -101,6 +105,8 @@ class ServerOfferDetailAPIView(RetrieveAPIView):
             "gpu_offers_count": serializers.IntegerField(),
             "min_price_irr": serializers.IntegerField(allow_null=True),
             "max_price_irr": serializers.IntegerField(allow_null=True),
+            "min_price_toman": serializers.IntegerField(allow_null=True),
+            "max_price_toman": serializers.IntegerField(allow_null=True),
             "regions": serializers.ListField(child=serializers.DictField()),
             "region_details": serializers.ListField(child=serializers.DictField()),
             "providers": serializers.ListField(child=serializers.DictField()),
@@ -117,6 +123,8 @@ class OfferStatisticsAPIView(APIView):
             gpu_offers_count=Count("id", filter=Q(has_gpu=True)),
             min_price_irr=Min("price_amount_irr"),
             max_price_irr=Max("price_amount_irr"),
+            min_price_toman=Min("price_amount_toman"),
+            max_price_toman=Max("price_amount_toman"),
         )
         aggregate["providers_count"] = Provider.objects.count()
         aggregate["regions"] = list(
@@ -219,6 +227,8 @@ def _number_filter(
 def _ordering(value: str | None) -> list[str]:
     allowed = {
         "price_amount_irr",
+        "price_amount_toman",
+        "equivalent_hourly_price_toman",
         "cpu_cores",
         "ram_mb",
         "disk_gb",
@@ -231,7 +241,7 @@ def _ordering(value: str | None) -> list[str]:
         "provider",
     }
     if not value:
-        return ["price_amount_irr", "provider__slug", "name"]
+        return ["equivalent_hourly_price_toman", "provider__slug", "name"]
 
     fields = []
     for raw_field in value.split(","):
@@ -245,4 +255,4 @@ def _ordering(value: str | None) -> list[str]:
                 fields.append(f"{prefix}provider__slug")
             else:
                 fields.append(field)
-    return fields or ["price_amount_irr", "provider__slug", "name"]
+    return fields or ["equivalent_hourly_price_toman", "provider__slug", "name"]

@@ -1,0 +1,73 @@
+# ferdowsi cloud 
+curl 'https://api.ferdowsi.cloud/api/v2/sm/mhd-fum1/flavors/gpus'
+this to get gpu list which is used in next query to get gpu flavors
+sample response: 
+{
+    "data": [
+        {
+            "name": "Nvidia-RTX-2080Ti",
+            "busy": true,
+            "photo": "https://static.ferdowsi.cloud/GPUS/NVIDIA_RTX_2080TI.png",
+            "display_name": "Nvidia-RTX-2080Ti (11 GB)",
+            "sort_order": 1,
+            "image_name": "nvidiaRTX2080Ti",
+            "cuda_core": 4352,
+            "memory": 11,
+            "Bandwidth": "616 GB/s",
+            "gpu_flavor_limit": 2
+        },
+        ...
+}
+
+next:
+curl 'https://api.ferdowsi.cloud/api/v2/planning/mhd-fum1/flavors?type=GPU&public=True&gpu_name=Nvidia-RTX-2080Ti' 
+
+sample response:
+{
+   "data":{
+      "service_type":"VirtualMachine",
+      "plans":[
+         {
+            "id":"c3d696b5-b22d-4e75-928d-4722ba56e4dd",
+            "name":"GPU-2080-12c-16r-150d-x1",
+            "flavor_type":"GPU",
+            "generation":"gen3",
+            "cpu":{
+               "cores":12
+            },
+            "ram":{
+               "size":16384,
+               "unit":"MB"
+            },
+            "disk":{
+               "size":150,
+               "unit":"GB"
+            },
+            "bandwidth":{
+               "size":"unlimited",
+               "unit":null
+            },
+            "ratings":{
+               "monthly":186480000,
+               "daily":6216000,
+               "hourly":259000
+            },
+            "is_vip":true,
+            "metadata":{
+               
+            },
+            "disk_type":"hdd",
+            "region":"mhd-fum1",
+            "gpu_name":"Nvidia-RTX-2080Ti",
+            "gpu_count":1,
+            "busy":true,
+            "gift":false,
+            "percent":null,
+            "amount":null
+         }
+      ]
+   },
+   "status_code":200
+}
+
+this may have more plans .. i just provided a sample.

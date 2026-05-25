@@ -1,0 +1,58 @@
+# irangpu
+curl 'https://irangpu.com/rent-gpu-server/' 
+test responds with html page. 
+
+in the html, there is this sample div: (i bring necessary fields) i may remove some divs or some elements from original html and show it here:
+<div class="elementor-element elementor-element-1813759 e-con-full plan-li e-flex e-con e-child" data-id="1813759" data-element_type="container" data-e-type="container" data-settings="{&quot;background_background&quot;:&quot;classic&quot;}">
+    <div class="elementor-element elementor-element-8f0a6ac plans-title eng-num elementor-widget elementor-widget-heading" data-id="8f0a6ac" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default">
+        <h3 class="elementor-heading-title elementor-size-default">RTX4090-Start</h3>
+    </div>
+    <div class="elementor-element elementor-element-74353c0 elementor-widget elementor-widget-heading" data-id="74353c0" data-element_type="widget" data-e-type="widget" data-widget_type="heading.default">
+        <p class="elementor-heading-title elementor-size-default">63.300.000 تومان / ماهانه</p>
+    </div>
+    <div class="elementor-element elementor-element-9ca4cd5 eng-num elementor-icon-list--layout-traditional elementor-list-item-link-full_width elementor-widget elementor-widget-icon-list" data-id="9ca4cd5" data-element_type="widget" data-e-type="widget" data-widget_type="icon-list.default">
+        <ul class="elementor-icon-list-items">
+            <li class="elementor-icon-list-item">
+                <span class="elementor-icon-list-icon">
+                </span>
+                <span class="elementor-icon-list-text">24GB VRAM</span>
+            </li>
+            <li class="elementor-icon-list-item">
+                <span class="elementor-icon-list-icon">
+                </span>
+                <span class="elementor-icon-list-text">CPU 8 cores</span>
+            </li>
+            <li class="elementor-icon-list-item">
+                <span class="elementor-icon-list-icon">
+                </span>
+                <span class="elementor-icon-list-text">30GB RAM</span>
+            </li>
+            <li class="elementor-icon-list-item">
+                <span class="elementor-icon-list-icon">
+                </span>
+                <span class="elementor-icon-list-text">150GB SSD</span>
+            </li>
+            <li class="elementor-icon-list-item">
+                <span class="elementor-icon-list-icon">
+                </span>
+                <span class="elementor-icon-list-text">شیراز</span>
+            </li>
+        </ul>
+    </div>
+    <div class="elementor-element elementor-element-fac929b elementor-align-center plan-li-btn elementor-widget elementor-widget-button" data-id="fac929b" data-element_type="widget" data-e-type="widget" data-widget_type="button.default">
+        <a class="elementor-button elementor-button-link elementor-size-sm" href="#" id="m-rtx4090-start">
+            <span class="elementor-button-content-wrapper">
+                <span class="elementor-button-text">ثبت سفارش</span>
+            </span>
+        </a>
+    </div>
+</div>
+
+these classes in parent div:
+e-con-full plan-li e-flex e-con e-child
+are the ones containing the gpus. 
+
+parse prices wisely. 
+some prices are like 139.000 تومان / ساعتی which are hourly.
+
+some prices maybe >قیمت: دریافت مشاوره which is unavailable indeed. 
