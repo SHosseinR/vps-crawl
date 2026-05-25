@@ -63,6 +63,8 @@ db.sqlite3
 db.sqlite3-journal
 staticfiles/
 vps_market/staticfiles/
+frontend/node_modules/
+frontend/dist/
 
 # Flask stuff:
 instance/

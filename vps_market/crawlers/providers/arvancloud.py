@@ -39,13 +39,15 @@ class ArvanCloudCrawler(ProviderCrawler):
                 disk_gb, disk_type = parse_storage_gb(disk_text)
                 az = _query_value(buy_url, "az")
                 city = _city_from_az(az)
+                region = _region_from_az(az)
 
                 offers.append(
                     Offer(
                         source_offer_id=_query_value(buy_url, "size") or name,
                         name=name,
-                        region=az or "iran",
-                        country="Iran",
+                        region=region,
+                        region_detail=az or "",
+                        country=_country_from_region(region),
                         city=city,
                         category=category,
                         billing_period="monthly",
@@ -104,3 +106,20 @@ def _city_from_az(az: str | None) -> str | None:
     if normalized.startswith("ir-"):
         return "Iran"
     return None
+
+
+def _region_from_az(az: str | None) -> str:
+    normalized = normalize_digits(az).lower() if az else ""
+    if normalized.startswith("ir-"):
+        return "iran"
+    if normalized.startswith("eu-"):
+        return "europe"
+    return normalized.split("-", 1)[0] if normalized else "unknown"
+
+
+def _country_from_region(region: str | None) -> str | None:
+    mapping = {
+        "iran": "Iran",
+        "europe": "Europe",
+    }
+    return mapping.get(region or "")

@@ -36,7 +36,6 @@ class IranServerCrawler(ProviderCrawler):
         offers: list[Offer] = []
         offers.extend(self.fetch_iran_cloud_api())
         for region, url in self.vps_region_urls.items():
-            print(f"Crawling region {region} at {url}")
             offers.extend(self.parse_region_page(region, url, self.get_text(url)))
         offers.extend(self.parse_gpu_page(self.get_text(self.gpu_url)))
         return offers
@@ -46,18 +45,10 @@ class IranServerCrawler(ProviderCrawler):
         for category_id in range(1, 5):
             page = 1
             while True:
-                # body = (
-                #     "_token=6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI"
-                #     f"&type=cloud&cycle=monthly&category_id={category_id}&page={page}&per_page=20"
-                # )
-                body = {
-                    "_token": "6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI",
-                    "type": "cloud",
-                    "cycle": "monthly",
-                    "category_id": category_id,
-                    "page": page,
-                    "per_page": 20,
-                }
+                body = (
+                    "_token=6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI"
+                    f"&type=cloud&cycle=monthly&category_id={category_id}&page={page}&per_page=20"
+                )
                 response = self.post_form_json(self.plans_api_url, body)
                 for item in response.get("data") or []:
                     offers.append(self._api_item_to_offer(item, category_id))
@@ -77,6 +68,7 @@ class IranServerCrawler(ProviderCrawler):
             source_offer_id=f"cloud-iran-{item.get('id') or product_id}",
             name=normalize_text(item.get("name")) or str(product_id),
             region="iran",
+            region_detail="",
             country="Iran",
             category=f"cloud-category-{category_id}",
             billing_period="monthly",
@@ -155,6 +147,7 @@ class IranServerCrawler(ProviderCrawler):
             source_offer_id=f"vps-{region}-{product_id}-{group_name}-{tab_name}",
             name=service_name or str(product_id),
             region=region,
+            region_detail="",
             country=_country_from_region(region),
             category=group_name if group_name != "others" else tab_name,
             billing_period="monthly",
@@ -184,8 +177,14 @@ class IranServerCrawler(ProviderCrawler):
             marker_index = html_text.find(marker)
             if marker_index < 0:
                 continue
+            marker_index += len(marker)
             array_start = html_text.find("[", marker_index)
             literal = extract_balanced(html_text, array_start, "[", "]")
+            # print([html_text[array_start: array_start + 200]])
+            # print('='*50, '\n\n\n')
+            # print(f'{literal[:100]}...')  # Debug print to check the extracted literal
+            # print('='*50, '\n\n\n')
+            # break
             plan_items = load_json_or_js_literal(literal)
 
             for item in plan_items:
@@ -212,15 +211,17 @@ class IranServerCrawler(ProviderCrawler):
         display_enabled = item.get("displayCardEnable", True) is not False
         available = order_enabled and display_enabled and monthly_price is not None
         details = [normalize_text(detail) for detail in item.get("details") or []]
-        specs = extract_specs_from_lines(details)
         gpu_line = details[0] if details else normalize_text(item.get("title"))
+        vm_detail_lines = details[1:] if details else []
+        specs = extract_specs_from_lines(vm_detail_lines)
         gpu_model = _gpu_model(gpu_line, normalize_text(item.get("title")))
         city = _location_from_details(details)
 
         return Offer(
             source_offer_id=f"gpu-{price_id or item.get('id')}-{billing_period}",
             name=normalize_text(item.get("title")) or str(price_id),
-            region="iran-gpu",
+            region="iran",
+            region_detail=(city or "gpu").lower(),
             country="Iran",
             city=city,
             category="gpu",

@@ -8,3 +8,5 @@ __pycache__/
 .git/
 postgres_data/
 vps_market/staticfiles/
+frontend/node_modules/
+frontend/dist/

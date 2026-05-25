@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from rest_framework import serializers
 
-from offers.models import Provider, ServerOffer
+from offers.models import GpuSpec, Provider, ServerOffer
 
 
 class ProviderSerializer(serializers.ModelSerializer):
@@ -11,8 +11,15 @@ class ProviderSerializer(serializers.ModelSerializer):
         fields = ["id", "slug", "name", "base_url", "created_at", "updated_at"]
 
 
+class GpuSpecSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GpuSpec
+        fields = ["id", "model", "memory_mb"]
+
+
 class ServerOfferSerializer(serializers.ModelSerializer):
     provider = ProviderSerializer(read_only=True)
+    gpu = GpuSpecSerializer(read_only=True)
 
     class Meta:
         model = ServerOffer
@@ -22,6 +29,7 @@ class ServerOfferSerializer(serializers.ModelSerializer):
             "source_offer_id",
             "name",
             "region",
+            "region_detail",
             "country",
             "city",
             "category",
@@ -36,8 +44,7 @@ class ServerOfferSerializer(serializers.ModelSerializer):
             "traffic_gb",
             "bandwidth_mbps",
             "has_gpu",
-            "gpu_model",
-            "gpu_memory_mb",
+            "gpu",
             "available",
             "buy_url",
             "source_url",

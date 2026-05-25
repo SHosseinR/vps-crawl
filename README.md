@@ -26,6 +26,7 @@ Services:
 - `db`: PostgreSQL
 - `migrate`: runs Django migrations
 - `web`: API on `http://localhost:8000`
+- `frontend`: React UI on `http://localhost:5173`
 - `crawler`: periodic crawl worker using the Django ORM
 
 Static files are served by WhiteNoise. The web container runs `collectstatic` on startup so Django admin and Swagger assets work even when `./vps_market` is bind-mounted into the container.
@@ -54,6 +55,14 @@ python vps_market/manage.py crawl_offers
 python vps_market/manage.py runserver
 ```
 
+Run the React frontend locally:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
 ## API
 
 - `GET /api/docs/`
@@ -67,8 +76,10 @@ Useful offer filters:
 
 - `provider=iranserver`
 - `region=iran`
+- `region_detail=ir-thr-ba1`
 - `country=Iran`
 - `has_gpu=true`
+- `gpu_model=L40S`
 - `available=true`
 - `billing_period=monthly`
 - `min_price_irr=1000000`
@@ -84,6 +95,7 @@ Useful offer filters:
 
 - `providers`: provider registry
 - `server_offers`: normalized VPS/container/GPU offers, with raw source payload in `raw_payload`
+- `gpu_specs`: GPU-specific fields linked one-to-one to GPU offers
 - `crawl_runs`: status and summary of each crawl run
 
 The primary expansion point is `vps_market/crawlers/providers`. Add a new provider class that returns normalized `Offer` instances, then register it in `vps_market/crawlers/providers/__init__.py`. Persistence stays in `vps_market/offers/services.py` and uses Django models only.

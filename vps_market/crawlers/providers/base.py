@@ -16,6 +16,7 @@ class Offer:
     original_price_amount: int | None
     original_price_currency: str | None
     region: str | None = None
+    region_detail: str | None = None
     country: str | None = None
     city: str | None = None
     category: str | None = None

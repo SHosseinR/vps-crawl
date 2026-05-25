@@ -7,7 +7,7 @@ from django.utils import timezone
 
 from crawlers.providers import get_crawlers
 from crawlers.providers.base import Offer, ProviderCrawler
-from offers.models import CrawlRun, Provider, ServerOffer
+from offers.models import CrawlRun, GpuSpec, Provider, ServerOffer
 
 
 logger = logging.getLogger(__name__)
@@ -56,13 +56,15 @@ def upsert_offers(provider: Provider, offers: list[Offer], seen_at) -> int:
     upserted = 0
     for offer in offers:
         defaults = offer_defaults(offer, seen_at)
-        ServerOffer.objects.update_or_create(
+        server_offer, _ = ServerOffer.objects.update_or_create(
             provider=provider,
             source_offer_id=offer.source_offer_id,
             region=offer.region,
+            region_detail=offer.region_detail or "",
             billing_period=offer.billing_period,
             defaults=defaults,
         )
+        update_offer_gpu(server_offer, offer)
         upserted += 1
     return upserted
 
@@ -83,14 +85,39 @@ def offer_defaults(offer: Offer, seen_at) -> dict[str, object]:
         "traffic_gb": offer.traffic_gb,
         "bandwidth_mbps": offer.bandwidth_mbps,
         "has_gpu": offer.has_gpu,
-        "gpu_model": offer.gpu_model,
-        "gpu_memory_mb": offer.gpu_memory_mb,
         "available": offer.available,
         "buy_url": offer.buy_url,
         "source_url": offer.source_url,
         "raw_payload": offer.raw_payload,
         "last_seen_at": seen_at,
     }
+
+
+def update_offer_gpu(server_offer: ServerOffer, offer: Offer) -> None:
+    if not offer.has_gpu:
+        if server_offer.gpu_id:
+            server_offer.gpu = None
+            server_offer.save(update_fields=["gpu"])
+        return
+
+    model = offer.gpu_model or offer.name
+    gpu_spec, _ = GpuSpec.objects.get_or_create(
+        model=model,
+        memory_mb=offer.gpu_memory_mb,
+        defaults={
+            "raw_payload": {
+                "gpu_model": offer.gpu_model,
+                "gpu_memory_mb": offer.gpu_memory_mb,
+            }
+        },
+    )
+    if gpu_spec.raw_payload != {"gpu_model": offer.gpu_model, "gpu_memory_mb": offer.gpu_memory_mb}:
+        gpu_spec.raw_payload = {"gpu_model": offer.gpu_model, "gpu_memory_mb": offer.gpu_memory_mb}
+        gpu_spec.save(update_fields=["raw_payload", "updated_at"])
+
+    if server_offer.gpu_id != gpu_spec.id:
+        server_offer.gpu = gpu_spec
+        server_offer.save(update_fields=["gpu"])
 
 
 def mark_missing_offers_unavailable(provider: Provider, seen_at) -> int:
