@@ -38,7 +38,7 @@ services:
       DJANGO_DEBUG: "false"
       DJANGO_ALLOWED_HOSTS: "*"
       API_PAGE_SIZE: 50
-      ARVANCLOUD_COOKIE: ${ARVANCLOUD_COOKIE:-}
+      ARVANCLOUD_COOKIE: "_ym_debug=0; ar_lang=fa; _ga=GA1.1.1300741880.1769873636; _ym_uid=1769873637408955207; _ym_d=1769873637; _clck=1cifq09%5E2%5Eg3c%5E0%5E2222; lang=fa; _pk_id.1.5d13=d0f2e9e056934b15.1779689946.; ar_acd=d0aa841d-5299-54c9-a3a0-35c6be0d2638; ar_rft=X6DT6JMBKOanWliWqvzBBTPCbiyJJGljBJNrF31OKhGWku3J6YyQz7ytg1AC4wrhI4nIzO9RCJPhk2Aq5ytmYc7xCUq8sXn0xbkIu3VVF3H073v1rFjZoqakPHsgBAXQAFjwC9J0MYXe5vHkbohlB0fdszp9HWufPpXlqHlmh9dCmBBHGkMSCw24R9Cw9tHEjGLQ55LvHcLY9hivH79ojRtQyXvnYuSPjavTWdWpRqBOT6DcfFVo715MlDVsHus; ar_tk=M5TYAZonZaWIqghYfrzv3mF8l49PRZPIgnfob6udeiZNFfTbA2nyApubNf8cwuCAJNzwUMV66upqMarqWs651ZuQCkyjkJylpFC8puxSqUwDrIXeIkuV2iUW540p08ZZ216OyIZfU6SikLIPDtQ0fshHICEuJ7bCfGiTGRV1c8b24HWEt01KpVAAcH2NLXqHngvi9rQlzD0YQ6dX7tYxmuiG4f4EwHwpZRPQ9Y4719HFmcm80ImRq3mPMbZCadV; ar_exp=2026-05-26T00:54:16Z; _gcl_au=1.1.1117476290.1779721044; analytics_token=25de42fb-e9ba-5a06-e186-233cedde1284; yektanet_session_last_activity=5/25/2026; _yngt=01JEEK0XJ287HE4T9XGGCQB6ZS; _ym_isad=1; _ym_debug=0; __arcsjs=766277e40690b8a809adcdc09ecc35dc; __arcsjsc=arcookie-1779739041-43ec309c73ff1cb779bc4083f992881d; XSRF-TOKEN=eyJpdiI6IldpaFAybmlYZGNpekhYUHpUVExaTkE9PSIsInZhbHVlIjoiK283OUhCU21jc0pacEZuNjVRYkFUSURBMEgrUGE5RytyaUZ4bGpyUDlGQmEyaDA2c1N6empWclVYOW1xeStGWW1peGt6RGhaVENyaXFsZ2dUZll1TGtKTzlyZlY2cUQzZERFNmVYK2k2M0Ixem5EbDVQdVo3R1ZpaFdHQkJsd1QiLCJtYWMiOiI4YzRkMzhjM2IwMjYzN2YyYTFlOWVkOTRkZTFmODQ4NzI2YjcyMDQ3MzgwN2MyYWFkMmE4NjkyNTM0ZmIxOWEyIiwidGFnIjoiIn0%3D; arvan_session=eyJpdiI6IkhTZytBaldNbVZRa0NSZEJkaWoyM3c9PSIsInZhbHVlIjoiRU5rM1FUVjB2MzFNZnBqYnF1bjdUMkhkSmpGNjhydjM1ZTRNaTNIRlJuQklLQTB5VzAvaUl1OVNyb201b3E5QzRVRktlWlVVNHpjODZxeTZzOEFSZ1FKV1JmSVNXZUR0TDFLTDdJNkFyUGJ2b2lNbWh6bDErMy9hUDVOTGsyVjciLCJtYWMiOiJkZmE2Y2Q1NmU4YzFjOGNhMWIyMjhkMGM0YmE0ZTUyZWVhNTY0NmE2MzU3ZTkzNDU0M2JjMTY4YmU2NDI3YzI4IiwidGFnIjoiIn0%3D; _pk_ses.1.5d13=1; analytics_session_token=22b44739-d18f-0e7f-1cad-15d1e74f2521; _ga_8VNGLNVW29=GS2.1.s1779730151$o6$g0$t1779730151$j60$l0$h0"
       IRANSERVER_COOKIE: ${IRANSERVER_COOKIE:-}
       LOG_LEVEL: INFO
     ports:
@@ -78,27 +78,27 @@ services:
       - web
     restart: unless-stopped
     
-  crawler:
-    build: .
-    command: python vps_market/manage.py crawl_offers --worker
-    environment:
-      DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
-      DJANGO_SECRET_KEY: dev-only-change-me
-      DJANGO_DEBUG: "false"
-      DJANGO_ALLOWED_HOSTS: "*"
-      CRAWL_INTERVAL_MINUTES: 360
-      CRAWL_PROVIDERS: iranserver,arvancloud
-      ARVANCLOUD_COOKIE: ${ARVANCLOUD_COOKIE:-}
-      IRANSERVER_COOKIE: ${IRANSERVER_COOKIE:-}
-      LOG_LEVEL: INFO
-    depends_on:
-      db:
-        condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
-    restart: unless-stopped
-    volumes:
-      - ./vps_market:/app/vps_market
+  # crawler:
+  #   build: .
+  #   command: python vps_market/manage.py crawl_offers --worker
+  #   environment:
+  #     DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
+  #     DJANGO_SECRET_KEY: dev-only-change-me
+  #     DJANGO_DEBUG: "false"
+  #     DJANGO_ALLOWED_HOSTS: "*"
+  #     CRAWL_INTERVAL_MINUTES: 360
+  #     CRAWL_PROVIDERS: iranserver,arvancloud,irangpu,lexoya,ferdowsi_cloud
+  #     ARVANCLOUD_COOKIE: ${ARVANCLOUD_COOKIE:-}
+  #     IRANSERVER_COOKIE: ${IRANSERVER_COOKIE:-}
+  #     LOG_LEVEL: INFO
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #     migrate:
+  #       condition: service_completed_successfully
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ./vps_market:/app/vps_market
 
 volumes:
   postgres_data:

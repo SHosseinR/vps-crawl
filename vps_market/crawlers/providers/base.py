@@ -72,6 +72,17 @@ class ProviderCrawler:
         return response.text
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
+    def get_json(
+        self,
+        url: str,
+        params: dict[str, object] | None = None,
+        cookie: str | None = None,
+    ) -> dict[str, Any]:
+        response = self.session.get(url, params=params, headers=self._headers(cookie), timeout=self.timeout)
+        response.raise_for_status()
+        return response.json()
+
+    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=8))
     def post_form_json(self, url: str, body: str, cookie: str | None = None) -> dict[str, Any]:
         response = self.session.post(
             url,

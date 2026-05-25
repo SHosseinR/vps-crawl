@@ -2,12 +2,18 @@ from __future__ import annotations
 
 from crawlers.providers.arvancloud import ArvanCloudCrawler
 from crawlers.providers.base import ProviderCrawler
+from crawlers.providers.ferdowsi_cloud import FerdowsiCloudCrawler
+from crawlers.providers.irangpu import IranGpuCrawler
 from crawlers.providers.iranserver import IranServerCrawler
+from crawlers.providers.lexoya import LexoyaCrawler
 
 
 CRAWLER_TYPES: dict[str, type[ProviderCrawler]] = {
     "iranserver": IranServerCrawler,
     "arvancloud": ArvanCloudCrawler,
+    "irangpu": IranGpuCrawler,
+    "lexoya": LexoyaCrawler,
+    "ferdowsi_cloud": FerdowsiCloudCrawler,
 }
 
 

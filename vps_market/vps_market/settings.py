@@ -108,7 +108,7 @@ SPECTACULAR_SETTINGS = {
 CRAWL_INTERVAL_MINUTES = int(os.getenv("CRAWL_INTERVAL_MINUTES", "360"))
 CRAWL_PROVIDERS = tuple(
     item.strip()
-    for item in os.getenv("CRAWL_PROVIDERS", "iranserver,arvancloud").split(",")
+    for item in os.getenv("CRAWL_PROVIDERS", "iranserver,arvancloud,irangpu,lexoya,ferdowsi_cloud").split(",")
     if item.strip()
 )
 HTTP_TIMEOUT_SECONDS = int(os.getenv("HTTP_TIMEOUT_SECONDS", "30"))

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from decimal import Decimal
 
 from django.db import transaction
@@ -135,24 +136,64 @@ def update_offer_gpu(server_offer: ServerOffer, offer: Offer) -> None:
             server_offer.save(update_fields=["gpu"])
         return
 
-    model = offer.gpu_model or offer.name
-    gpu_spec, _ = GpuSpec.objects.get_or_create(
-        model=model,
-        memory_mb=offer.gpu_memory_mb,
-        defaults={
-            "raw_payload": {
-                "gpu_model": offer.gpu_model,
-                "gpu_memory_mb": offer.gpu_memory_mb,
-            }
-        },
-    )
-    if gpu_spec.raw_payload != {"gpu_model": offer.gpu_model, "gpu_memory_mb": offer.gpu_memory_mb}:
-        gpu_spec.raw_payload = {"gpu_model": offer.gpu_model, "gpu_memory_mb": offer.gpu_memory_mb}
+    model = normalize_gpu_model_name(offer.gpu_model or offer.name)
+    gpu_spec = get_or_create_gpu_spec(model, offer.gpu_memory_mb)
+    raw_payload = {
+        "gpu_model": offer.gpu_model,
+        "normalized_model": model,
+        "gpu_memory_mb": offer.gpu_memory_mb,
+    }
+    if gpu_spec.raw_payload != raw_payload:
+        gpu_spec.raw_payload = raw_payload
         gpu_spec.save(update_fields=["raw_payload", "updated_at"])
 
     if server_offer.gpu_id != gpu_spec.id:
         server_offer.gpu = gpu_spec
         server_offer.save(update_fields=["gpu"])
+
+
+def normalize_gpu_model_name(model: str | None) -> str:
+    normalized = (model or "").strip()
+    normalized = re.sub(r"^\s*nvidia[\s\-_]+", "", normalized, flags=re.IGNORECASE)
+    normalized = re.sub(r"\s*\([^)]*\)\s*$", "", normalized).strip()
+    normalized = normalized.replace("-", " ").replace("_", " ")
+    return re.sub(r"\s+", " ", normalized).strip() or "Unknown GPU"
+
+
+def get_or_create_gpu_spec(model: str, memory_mb: int | None) -> GpuSpec:
+    if memory_mb is None:
+        existing_with_memory = (
+            GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=False)
+            .order_by("memory_mb", "id")
+            .first()
+        )
+        if existing_with_memory:
+            return existing_with_memory
+
+        null_memory_spec = GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=True).order_by("id").first()
+        if null_memory_spec:
+            if null_memory_spec.model != model:
+                null_memory_spec.model = model
+                null_memory_spec.save(update_fields=["model", "updated_at"])
+            return null_memory_spec
+
+        return GpuSpec.objects.create(model=model, memory_mb=None)
+
+    exact = GpuSpec.objects.filter(model__iexact=model, memory_mb=memory_mb).order_by("id").first()
+    if exact:
+        if exact.model != model:
+            exact.model = model
+            exact.save(update_fields=["model", "updated_at"])
+        return exact
+
+    null_memory_spec = GpuSpec.objects.filter(model__iexact=model, memory_mb__isnull=True).order_by("id").first()
+    if null_memory_spec:
+        null_memory_spec.model = model
+        null_memory_spec.memory_mb = memory_mb
+        null_memory_spec.save(update_fields=["model", "memory_mb", "updated_at"])
+        return null_memory_spec
+
+    return GpuSpec.objects.create(model=model, memory_mb=memory_mb)
 
 
 def mark_missing_offers_unavailable(provider: Provider, seen_at) -> int:
