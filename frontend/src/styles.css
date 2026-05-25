@@ -366,24 +366,26 @@ select {
 }
 
 .range-slider input::-webkit-slider-thumb {
-  width: 18px;
-  height: 18px;
-  border: 3px solid #151b23;
+  width: 20px;
+  height: 20px;
+  border: 0;
   border-radius: 50%;
   appearance: none;
-  background: #fff;
+  background: #151b23;
   cursor: pointer;
   pointer-events: auto;
+  box-shadow: 0 0 0 5px rgba(21, 27, 35, 0.12);
 }
 
 .range-slider input::-moz-range-thumb {
-  width: 14px;
-  height: 14px;
-  border: 3px solid #151b23;
+  width: 20px;
+  height: 20px;
+  border: 0;
   border-radius: 50%;
-  background: #fff;
+  background: #151b23;
   cursor: pointer;
   pointer-events: auto;
+  box-shadow: 0 0 0 5px rgba(21, 27, 35, 0.12);
 }
 
 .range-slider input::-webkit-slider-runnable-track {

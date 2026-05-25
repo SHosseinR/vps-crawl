@@ -714,6 +714,7 @@ function rangeBounds(value, fallbackMin, fallbackMax) {
 }
 
 function clampNumber(value, min, max, fallback) {
+  if (value === "" || value === null || value === undefined) return fallback;
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.min(max, Math.max(min, number));
