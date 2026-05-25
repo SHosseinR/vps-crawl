@@ -1,0 +1,100 @@
+# iranserver
+## servers region iran:
+curl 'https://www.iranserver.com/pricing/plans' \
+  --data-raw '_token=6ypGk3uxOgr1JCYUir1OeoYEpOdjDxQg2tqPgQGI&type=cloud&cycle=monthly&category_id=1&page=1&per_page=20'
+
+category_id from 1 to 5 (fetch all. category itself is not relevant in final results.)
+
+sample response: 
+{'data': [
+    {'category_id': 2, 'cpu': {'unit': 'هسته', 'value': 8}, 'description': 'مدل هارد NVMe می باشد. پردازنده به صور
+    ت اشتراکی 1 به 3 است.', 'disk': {'unit': 'گیگابایت', 'value': 120}, 'id': 6, 'name': 'NGP-xlarge120', 'price': {'unit':
+    'تومان', 'value': '7,274,879'}, 'product_id': 1400, 'ram': {'unit': 'گیگابایت', 'value': 32}, 'real_price': {'unit': 'تومان', 'value': '7,274,879'}, 'traffic': {'unit': 'گیگابایت', 'value': 1000}}, 
+    ...
+    ], 
+    'meta': {'current_page': 1, 'last_page': 1, 'next_page': None, 'per_page': 6, 'prev_page': None, 'total': 4}}  
+
+
+## sservers region germany 
+for these no api. 
+the html https://www.iranserver.com/vps/germany/
+
+has some script like this:
+<script>
+    $(document).ready(function() {
+        var mainPageData = {
+            "toggle": "1m",
+            "rightSideLabel": "1m",
+            "leftSideLabel": "1y",
+            "cardImage": "vps-blue",
+            "flagName": "",
+            "flagIcon1": "",
+            "flagIcon2": "",
+            "discounts": {
+                "1m": false,
+                "1mNumber": 20,
+                "1y": true,
+                "1yNumber": 10
+            },
+            "tab": "Intel\/AMD",
+            "topSwitcherStatus": true,
+            "contactLink": "Request",
+            "business": "",
+            "activeSwitcher": false,
+            "paginate": 8,
+            "active3InRow": false,
+            "featuresLimitNumber": null,
+            "componentName": "pricing_01"
+        };
+        // Load all Card Data JSON
+        window.allCardData = 
+which allCardData is like this this: 
+{
+    "Intel\/AMD": [{
+        "service_name": "CX23",
+        "tabs": {'others': {'addon': '', 'tag': '', 'bundle_id': '', 'pay_type': 'دوره ای', 'product_id': 1343, 'count': '∞', 'prices':
+{'1m': {'price': 1623000, 'promotion': 16230000, 'setup': 0, 'rate': ''}, '1y': {'price': -1, 'promotion': -1, 'setup': 0, 'rate': ''}, '2y': {'price': -1, 'promotion': -1, 'setup': 0, 'rate': ''}, '3m': {'price': -1, 'promotion': -1, 'setup': 0, 'rate': ''}, '3y': {'price': -1, 'promotion': -1, 'setup': 0, 'rate': ''}, '6m': {'price': -1, 'promotion': -1, 'setup': 0, 'rate': ''}}, 'main_features': [{'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'پردازنده\xa0 2vCores', 'info': '{{}}', 'priority': 2}, {'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'رم 4 گیگابایت', 'info': '{{}}', 'priority': 2}, {'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'فضا 40GB NVME', 'info': '{{}}', 'priority': 2}, {'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'ترافیک ماهیانه 15 ترابایت', 'info': '{{}}', 'priority': 2}, {'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'IP اختصاصی ۱عدد', 'info': '{{}}', 'priority': 2}], 'others_features': [{'type': 'سایر', 'value': '-', 'icon': 'icon-check', 'text': 'پورت اتصال 1 گیگابایت', 'info': '{{}}', 'priority': 2}], 'filter_features': [], 'id': 1}} 
+    }, ...], 
+    "Ampere": [...],
+    "AMD": [...]
+}
+
+obviously more thatn all 3 (AMD, ... ) are full. or maybe more. and  in each, there are more childs. i bring one. 
+note that count zero means unavailable. 
+
+## servers region france, finland are same as germany.
+## servers for europe and usa are same but with only change that the high level keys, e.g. Ampere, AMD, .. are not those. keys are more like providers. e.g. in europe, keys are HETZNET and OVH. and in usa, only one exist and it's name is 'others'. so be careful of extracting data.
+
+## gpu server. they are different.
+
+the html link to fetch: https://www.iranserver.com/vps/gpu/
+
+    function modelContentManager(planIndex, tab) {
+        var selectedTab = 0;
+        if (tab != 'iran') {
+            if (tab == 'sale') {
+                selectedTab = 2;
+            } else {
+                selectedTab = 1;
+            }
+        }
+        var planItems = [];
+        planItems[0] = [{'id': 'pric_04_space_11', 'label': '2GB', 'image': 'images\\/icon-pack-new\\/icon_pck_dedicated.svg', 'title': 'L40S-Light', 'desc': '135.1 میلیون تــومــان ماهیانه', 'precent': '۷۰%', 'price_id': '1437', 'orderlink': 'https:\\/\\/hub.iranserver.com\\/cart.php?a=add&pid=1437', 'orderEnable': True, 'alternativeText': '11,7', 'alternativeAnnullayPrice': '', 'orderDiableText': 'ناموجود', 'ordertext': 'ثبت سفارش', 'extention': 'میلیون تومان', 'details': ['L40S (Ram48GB)', 'CPU 16cores', '64GB Ram', '670G SSD', '1TB Traffic', '1024MB\\/s BandWidth', 'Location SHIRAZ']}
+        , ...];
+        planItems[1] = [# these have no price. so ignore];
+        planItems[2] = [{'id': 'pric_04_space_6', 'label': '2GB', 'image': 'images\\/icon-pack-new\\/icon_pck_dedicated.svg', 'title': 'RTX2080-Light', 'desc': '299 هــزار تــومــان ماهیانه', 'precent': '۷۰%', 'price_id': '1418', 'orderlink': 'https:\\/\\/hub.iranserver.com\\/cart.php?a=add&pid=1418', 'orderEnable': True, 'displayCardEnable': False, 'cycle': 'ساعتی', 'alternativeText': '31', 'alternativeAnnullayPrice': '', 'orderDiableText': 'ناموجود', 'ordertext': 'ثبت سفارش', 'extention': 'هــزار تومان', 'details': ['RTX2080(Ram11GB)', 'CPU16 cores', '45GB RAM', '300GB SSD', '1TB Traffic', '1024MB\\/s BandWidth', 'Location SHIRAZ']} 
+,...];
+you need to extract vm info from details list. the website did not provide separately. 
+notes on these. planItem 0 is monthly. and planItem 2 is hourly. you can take price from another var in the html link. a map proce_id above to price. 
+    var priceList = {
+        "1": [{
+            "monthly": {
+                "price": -1,
+                "setup": 0
+            },
+            "product_id": 1,
+            "disable": 0
+        }],
+        "2": [{...
+    };
+always use the monthly key from the priceList. even for hourly planItem 2. (the website is idiot. they put all price in monthly. don't convert month to hour. they did not. just use the monthly. the monthly price above, is hourly price ofr hourly plan.). and prices is to rial. (not toman)

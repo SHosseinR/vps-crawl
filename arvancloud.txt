@@ -1,0 +1,155 @@
+# arvancloud
+you should fetch this html: https://www.arvancloud.ir/fa/products/vps
+there are 3 div with class class="xl:overflow-hidden overflow-x-auto rounded-t-lg"
+under these are servers. one div sample:
+<div class="xl:overflow-hidden overflow-x-auto rounded-t-lg">
+    <table class="min-w-225 xl:min-w-full w-full lg:mx-0 border-separate border-spacing-0">
+        <thead>
+            <tr class="bg-[#F5F7FA]">
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-start  rtl:pr-8 ltr:pl-8"
+                    >
+                                                                نام
+                                                        </th>
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-start  "
+                    >
+                                                                پردازنده
+                                                        </th>
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-start  "
+                    >
+                                                                حافظه
+                                                        </th>
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-start  "
+                    >
+                                                                دیسک
+                                                        </th>
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-center  "
+                    >
+                                                                قیمت ماهانه
+                                                        </th>
+                                                <th
+                        class="py-5 border-y border-[#D1DBE8] rtl:first:border-r rtl:last:border-l ltr:first:border-l ltr:last:border-r rtl:first:rounded-tr-lg rtl:last:rounded-tl-lg ltr:first:rounded-tl-lg ltr:last:rounded-tr-lg text-base text-gray-900 font-semibold text-start w-12 "
+                    >
+                                                                
+                                                        </th>
+                                        </tr>
+        </thead>
+
+        <tbody>
+                                        
+                                                <tr
+                        onclick="window.open('https://panel.arvancloud.ir/ecc/create?image=793cdb82-c731-4aeb-808d-19da98525a02&amp;size=eco-small1&amp;az=ir-thr-ba1', '_blank')"
+                        class="pricing-iaas-link cursor-pointer lg:hover:bg-green-100 last:border-b-0 lg:hover:border-green-200 lg:hover:rounded-lg"
+                    >
+                        <td class="py-[18px] border-b border-[#E5EBF3] rtl:pr-8 ltr:pl-8 lg:py-[24px] text-start rtl:font-semibold text-gray-900">
+                            eco-small1
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            1 CPU
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            1 GB
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            25 GB
+                        </td>
+
+                        
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] text-center text-base text-green-600 font-semibold">
+                                                                        ۷۶۰,۰۰۰
+                                تومان
+                                                                </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3]">
+                            <div class="pricing-iaas__row-arrow cloud-server-pricing-table__btn flex justify-center items-center w-6 h-6 text-center rounded-md">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.666 8L3.33268 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 12.668L3.33333 8.0013L8 3.33464" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+                            </div>
+                        </td>
+                    </tr>
+                                                                    
+                                                <tr
+                        onclick="window.open('https://panel.arvancloud.ir/ecc/create?image=793cdb82-c731-4aeb-808d-19da98525a02&amp;size=eco-small2&amp;az=ir-thr-ba1', '_blank')"
+                        class="pricing-iaas-link cursor-pointer lg:hover:bg-green-100 last:border-b-0 lg:hover:border-green-200 lg:hover:rounded-lg"
+                    >
+                        <td class="py-[18px] border-b border-[#E5EBF3] rtl:pr-8 ltr:pl-8 lg:py-[24px] text-start rtl:font-semibold text-gray-900">
+                            eco-small2
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            1 CPU
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            2 GB
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            25 GB
+                        </td>
+
+                        
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] text-center text-base text-green-600 font-semibold">
+                                                                        ۸۲۳,۰۰۰
+                                تومان
+                                                                </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3]">
+                            <div class="pricing-iaas__row-arrow cloud-server-pricing-table__btn flex justify-center items-center w-6 h-6 text-center rounded-md">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.666 8L3.33268 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 12.668L3.33333 8.0013L8 3.33464" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+                            </div>
+                        </td>
+                    </tr>
+                                                                    
+                                                <tr
+                        onclick="window.open('https://panel.arvancloud.ir/ecc/create?image=793cdb82-c731-4aeb-808d-19da98525a02&amp;size=eco-small3&amp;az=ir-thr-ba1', '_blank')"
+                        class="pricing-iaas-link cursor-pointer lg:hover:bg-green-100 last:border-b-0 lg:hover:border-green-200 lg:hover:rounded-lg"
+                    >
+                        <td class="py-[18px] border-b border-[#E5EBF3] rtl:pr-8 ltr:pl-8 lg:py-[24px] text-start rtl:font-semibold text-gray-900">
+                            eco-small3
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            1 CPU
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            3 GB
+                        </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] ltr:text-start rtl:text-end rtl:font-semibold text-gray-900 ltr-grid font-latin">
+                            30 GB
+                        </td>
+
+                        
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3] text-center text-base text-green-600 font-semibold">
+                                                                        ۹۵۴,۰۰۰
+                                تومان
+                                                                </td>
+
+                        <td class="py-[18px] lg:py-[24px] border-b border-[#E5EBF3]">
+                            <div class="pricing-iaas__row-arrow cloud-server-pricing-table__btn flex justify-center items-center w-6 h-6 text-center rounded-md">
+                                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M12.666 8L3.33268 8" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M8 12.668L3.33333 8.0013L8 3.33464" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+                            </div>
+                        </td>
+                    </tr>
+                                                                    
+                    ... and more rows...             
+                </tbody>
+    </table>
+</div>

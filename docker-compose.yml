@@ -1,0 +1,74 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: vps_market
+      POSTGRES_USER: vps_market
+      POSTGRES_PASSWORD: vps_market
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U vps_market -d vps_market"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    build: .
+    command: python manage.py migrate --noinput
+    environment:
+      DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
+      DJANGO_SECRET_KEY: dev-only-change-me
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    build: .
+    command: gunicorn config.wsgi:application --bind 0.0.0.0:8000
+    environment:
+      DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
+      DJANGO_SECRET_KEY: dev-only-change-me
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      API_PAGE_SIZE: 50
+      LOG_LEVEL: INFO
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    volumes:
+      - ./vps_market:/app/vps_market
+      
+  crawler:
+    build: .
+    command: python manage.py crawl_offers --worker
+    environment:
+      DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
+      DJANGO_SECRET_KEY: dev-only-change-me
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      CRAWL_INTERVAL_MINUTES: 360
+      CRAWL_PROVIDERS: iranserver,arvancloud
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    volumes:
+      - ./vps_market:/app/vps_market
+
+volumes:
+  postgres_data:

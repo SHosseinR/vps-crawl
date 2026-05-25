@@ -1,0 +1,25 @@
+[project]
+name = "vps-market-crawl"
+version = "0.1.0"
+description = "Provider crawlers for normalized VPS and cloud container market data."
+requires-python = ">=3.11"
+dependencies = [
+    "APScheduler>=3.10,<4",
+    "beautifulsoup4>=4.12,<5",
+    "chompjs>=1.3,<2",
+    "Django>=5.0,<6",
+    "djangorestframework>=3.15,<4",
+    "gunicorn>=22,<24",
+    "lxml>=5,<6",
+    "psycopg[binary]>=3.2,<4",
+    "python-dotenv>=1,<2",
+    "requests>=2.32,<3",
+    "tenacity>=8.3,<10",
+]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["config*", "vps_market*"]
