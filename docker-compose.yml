@@ -38,8 +38,8 @@ services:
       DJANGO_DEBUG: "false"
       DJANGO_ALLOWED_HOSTS: "*"
       API_PAGE_SIZE: 50
-      ARVANCLOUD_COOKIE: "ar_lang=fa; _ga=GA1.1.1300741880.1769873636; _ym_uid=1769873637408955207; _ym_d=1769873637; _clck=1cifq09%5E2%5Eg3c%5E0%5E2222; lang=fa; _pk_id.1.5d13=d0f2e9e056934b15.1779689946.; ar_acd=d0aa841d-5299-54c9-a3a0-35c6be0d2638; ar_rft=X6DT6JMBKOanWliWqvzBBTPCbiyJJGljBJNrF31OKhGWku3J6YyQz7ytg1AC4wrhI4nIzO9RCJPhk2Aq5ytmYc7xCUq8sXn0xbkIu3VVF3H073v1rFjZoqakPHsgBAXQAFjwC9J0MYXe5vHkbohlB0fdszp9HWufPpXlqHlmh9dCmBBHGkMSCw24R9Cw9tHEjGLQ55LvHcLY9hivH79ojRtQyXvnYuSPjavTWdWpRqBOT6DcfFVo715MlDVsHus; ar_tk=M5TYAZonZaWIqghYfrzv3mF8l49PRZPIgnfob6udeiZNFfTbA2nyApubNf8cwuCAJNzwUMV66upqMarqWs651ZuQCkyjkJylpFC8puxSqUwDrIXeIkuV2iUW540p08ZZ216OyIZfU6SikLIPDtQ0fshHICEuJ7bCfGiTGRV1c8b24HWEt01KpVAAcH2NLXqHngvi9rQlzD0YQ6dX7tYxmuiG4f4EwHwpZRPQ9Y4719HFmcm80ImRq3mPMbZCadV; ar_exp=2026-05-26T00:54:16Z; _ga_8VNGLNVW29=GS2.1.s1779718198$o3$g0$t1779718207$j51$l0$h0; __arcsjs=915574e7ccd1c2fb4be99571e717c1f3; __arcsjsc=arcookie-1779729933-c8d59a025f35debcf801ae8ab065d017"
-      IRANSERVER_COOKIE: ""
+      ARVANCLOUD_COOKIE: ${ARVANCLOUD_COOKIE:-}
+      IRANSERVER_COOKIE: ${IRANSERVER_COOKIE:-}
       LOG_LEVEL: INFO
     ports:
       - "8000:8000"
@@ -55,7 +55,7 @@ services:
   frontend:
     image: node:22-alpine
     working_dir: /app/frontend
-    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    command: sh -c "npm install && npm run dev"
     environment:
       VITE_API_PROXY_TARGET: http://web:8000
     ports:
@@ -64,28 +64,41 @@ services:
       - web
     volumes:
       - ./frontend:/app/frontend
-      
-  # crawler:
-  #   build: .
-  #   command: python vps_market/manage.py crawl_offers --worker
-  #   environment:
-  #     DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
-  #     DJANGO_SECRET_KEY: dev-only-change-me
-  #     DJANGO_DEBUG: "false"
-  #     DJANGO_ALLOWED_HOSTS: "*"
-  #     CRAWL_INTERVAL_MINUTES: 360
-  #     CRAWL_PROVIDERS: iranserver,arvancloud
-  #     ARVANCLOUD_COOKIE: "ar_lang=fa; _ga=GA1.1.1300741880.1769873636; _ym_uid=1769873637408955207; _ym_d=1769873637; _clck=1cifq09%5E2%5Eg3c%5E0%5E2222; lang=fa; _pk_id.1.5d13=d0f2e9e056934b15.1779689946.; ar_acd=d0aa841d-5299-54c9-a3a0-35c6be0d2638; ar_rft=X6DT6JMBKOanWliWqvzBBTPCbiyJJGljBJNrF31OKhGWku3J6YyQz7ytg1AC4wrhI4nIzO9RCJPhk2Aq5ytmYc7xCUq8sXn0xbkIu3VVF3H073v1rFjZoqakPHsgBAXQAFjwC9J0MYXe5vHkbohlB0fdszp9HWufPpXlqHlmh9dCmBBHGkMSCw24R9Cw9tHEjGLQ55LvHcLY9hivH79ojRtQyXvnYuSPjavTWdWpRqBOT6DcfFVo715MlDVsHus; ar_tk=M5TYAZonZaWIqghYfrzv3mF8l49PRZPIgnfob6udeiZNFfTbA2nyApubNf8cwuCAJNzwUMV66upqMarqWs651ZuQCkyjkJylpFC8puxSqUwDrIXeIkuV2iUW540p08ZZ216OyIZfU6SikLIPDtQ0fshHICEuJ7bCfGiTGRV1c8b24HWEt01KpVAAcH2NLXqHngvi9rQlzD0YQ6dX7tYxmuiG4f4EwHwpZRPQ9Y4719HFmcm80ImRq3mPMbZCadV; ar_exp=2026-05-26T00:54:16Z; _ga_8VNGLNVW29=GS2.1.s1779718198$o3$g0$t1779718207$j51$l0$h0; __arcsjs=915574e7ccd1c2fb4be99571e717c1f3; __arcsjsc=arcookie-1779729933-c8d59a025f35debcf801ae8ab065d017"
-  #     IRANSERVER_COOKIE: ""
-  #     LOG_LEVEL: INFO
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #     migrate:
-  #       condition: service_completed_successfully
-  #   restart: unless-stopped
-  #   volumes:
-  #     - ./vps_market:/app/vps_market
+
+  nginx:
+    build:
+      context: ./frontend
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
+        
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+    restart: unless-stopped
+    
+  crawler:
+    build: .
+    command: python vps_market/manage.py crawl_offers --worker
+    environment:
+      DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
+      DJANGO_SECRET_KEY: dev-only-change-me
+      DJANGO_DEBUG: "false"
+      DJANGO_ALLOWED_HOSTS: "*"
+      CRAWL_INTERVAL_MINUTES: 360
+      CRAWL_PROVIDERS: iranserver,arvancloud
+      ARVANCLOUD_COOKIE: ${ARVANCLOUD_COOKIE:-}
+      IRANSERVER_COOKIE: ${IRANSERVER_COOKIE:-}
+      LOG_LEVEL: INFO
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    volumes:
+      - ./vps_market:/app/vps_market
 
 volumes:
   postgres_data:

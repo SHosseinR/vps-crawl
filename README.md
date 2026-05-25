@@ -27,9 +27,12 @@ Services:
 - `migrate`: runs Django migrations
 - `web`: API on `http://localhost:8000`
 - `frontend`: React UI on `http://localhost:5173`
+- `nginx`: production-style single origin on `http://localhost`
 - `crawler`: periodic crawl worker using the Django ORM
 
 Static files are served by WhiteNoise. The web container runs `collectstatic` on startup so Django admin and Swagger assets work even when `./vps_market` is bind-mounted into the container.
+
+The React app uses relative `/api/...` requests, so it talks to the same browser origin. In Docker, nginx serves the built React app and proxies `/api/` to Django. It also proxies `/admin/` and `/static/` so admin remains usable from the same host.
 
 ## Run one crawl
 
