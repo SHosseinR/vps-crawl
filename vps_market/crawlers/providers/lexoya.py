@@ -10,7 +10,7 @@ class LexoyaCrawler(ProviderCrawler):
     slug = "lexoya"
     display_name = "Lexoya"
     base_url = "https://lexoya.com"
-    buy_url = "https://lexoya.com/landings/gpu"
+    buy_url = "https://lexoya.com/landings/gpu-server"
     source_url = "https://lexoya.com/"
     api_urls = (
         "https://api.ir01.lexoya.com/v1/gpus/1005",

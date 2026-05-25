@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from django.db.models import Count, Max, Min, Q, QuerySet
+from django.db.models import Count, F, Max, Min, Q, QuerySet
 from drf_spectacular.utils import OpenApiParameter, extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.generics import ListAPIView, RetrieveAPIView
@@ -33,12 +33,19 @@ class ProviderListAPIView(ListAPIView):
         OpenApiParameter("max_price_irr", int),
         OpenApiParameter("min_price_toman", int),
         OpenApiParameter("max_price_toman", int),
+        OpenApiParameter("min_equivalent_hourly_price_toman", int),
+        OpenApiParameter("max_equivalent_hourly_price_toman", int),
         OpenApiParameter("min_cpu_cores", float),
+        OpenApiParameter("max_cpu_cores", float),
         OpenApiParameter("min_ram_mb", int),
+        OpenApiParameter("max_ram_mb", int),
         OpenApiParameter("min_disk_gb", float),
         OpenApiParameter("min_traffic_gb", float),
         OpenApiParameter("min_gpu_memory_mb", int),
+        OpenApiParameter("max_gpu_memory_mb", int),
         OpenApiParameter("search", str),
+        OpenApiParameter("sort_by", str, description="Sort field, e.g. equivalent_hourly_price_toman"),
+        OpenApiParameter("sort_dir", str, description="asc or desc"),
         OpenApiParameter("ordering", str, description="Comma-separated fields, e.g. equivalent_hourly_price_toman,-cpu_cores"),
     ]
 )
@@ -71,11 +78,26 @@ class ServerOfferListAPIView(ListAPIView):
         queryset = _number_filter(queryset, "price_amount_irr", params.get("max_price_irr"), "lte")
         queryset = _number_filter(queryset, "price_amount_toman", params.get("min_price_toman"), "gte")
         queryset = _number_filter(queryset, "price_amount_toman", params.get("max_price_toman"), "lte")
+        queryset = _number_filter(
+            queryset,
+            "equivalent_hourly_price_toman",
+            params.get("min_equivalent_hourly_price_toman"),
+            "gte",
+        )
+        queryset = _number_filter(
+            queryset,
+            "equivalent_hourly_price_toman",
+            params.get("max_equivalent_hourly_price_toman"),
+            "lte",
+        )
         queryset = _number_filter(queryset, "cpu_cores", params.get("min_cpu_cores"), "gte")
+        queryset = _number_filter(queryset, "cpu_cores", params.get("max_cpu_cores"), "lte")
         queryset = _number_filter(queryset, "ram_mb", params.get("min_ram_mb"), "gte")
+        queryset = _number_filter(queryset, "ram_mb", params.get("max_ram_mb"), "lte")
         queryset = _number_filter(queryset, "disk_gb", params.get("min_disk_gb"), "gte")
         queryset = _number_filter(queryset, "traffic_gb", params.get("min_traffic_gb"), "gte")
         queryset = _number_filter(queryset, "gpu__memory_mb", params.get("min_gpu_memory_mb"), "gte")
+        queryset = _number_filter(queryset, "gpu__memory_mb", params.get("max_gpu_memory_mb"), "lte")
 
         search = params.get("search")
         if search:
@@ -87,7 +109,7 @@ class ServerOfferListAPIView(ListAPIView):
                 | Q(region_detail__icontains=search)
             )
 
-        return queryset.order_by(*_ordering(params.get("ordering")))
+        return _apply_ordering(queryset, params.get("sort_by"), params.get("sort_dir"), params.get("ordering"))
 
 
 class ServerOfferDetailAPIView(RetrieveAPIView):
@@ -163,12 +185,23 @@ class OfferStatisticsAPIView(APIView):
             "billing_periods": serializers.ListField(child=serializers.CharField()),
             "disk_types": serializers.ListField(child=serializers.CharField()),
             "gpu_specs": serializers.ListField(child=serializers.DictField()),
+            "bounds": serializers.DictField(),
         },
     )
 )
 class FilterOptionsAPIView(APIView):
     def get(self, request):
         offers = ServerOffer.objects.select_related("provider", "gpu")
+        bounds = offers.aggregate(
+            min_price_toman=Min("price_amount_toman"),
+            max_price_toman=Max("price_amount_toman"),
+            min_cpu_cores=Min("cpu_cores"),
+            max_cpu_cores=Max("cpu_cores"),
+            min_ram_mb=Min("ram_mb"),
+            max_ram_mb=Max("ram_mb"),
+            min_gpu_memory_mb=Min("gpu__memory_mb"),
+            max_gpu_memory_mb=Max("gpu__memory_mb"),
+        )
         return Response(
             {
                 "providers": list(Provider.objects.values("slug", "name").order_by("slug")),
@@ -194,6 +227,12 @@ class FilterOptionsAPIView(APIView):
                     .order_by("disk_type")
                 ),
                 "gpu_specs": list(GpuSpec.objects.values("id", "model", "memory_mb").order_by("model", "memory_mb")),
+                "bounds": {
+                    "price_toman": {"min": bounds["min_price_toman"], "max": bounds["max_price_toman"]},
+                    "cpu_cores": {"min": bounds["min_cpu_cores"], "max": bounds["max_cpu_cores"]},
+                    "ram_mb": {"min": bounds["min_ram_mb"], "max": bounds["max_ram_mb"]},
+                    "gpu_memory_mb": {"min": bounds["min_gpu_memory_mb"], "max": bounds["max_gpu_memory_mb"]},
+                },
             }
         )
 
@@ -224,8 +263,8 @@ def _number_filter(
     return queryset.filter(**{f"{field}__{lookup}": number})
 
 
-def _ordering(value: str | None) -> list[str]:
-    allowed = {
+def _allowed_sort_fields() -> set[str]:
+    return {
         "price_amount_irr",
         "price_amount_toman",
         "equivalent_hourly_price_toman",
@@ -240,19 +279,44 @@ def _ordering(value: str | None) -> list[str]:
         "name",
         "provider",
     }
+
+
+def _sort_expression(field: str, descending: bool = False):
+    mapped_field = field
+    if field == "gpu_memory_mb":
+        mapped_field = "gpu__memory_mb"
+    elif field == "provider":
+        mapped_field = "provider__slug"
+
+    expression = F(mapped_field)
+    if descending:
+        return expression.desc(nulls_last=True)
+    return expression.asc(nulls_last=True)
+
+
+def _apply_ordering(
+    queryset: QuerySet[ServerOffer],
+    sort_by: str | None,
+    sort_dir: str | None,
+    legacy_ordering: str | None,
+) -> QuerySet[ServerOffer]:
+    allowed = _allowed_sort_fields()
+    if sort_by in allowed:
+        descending = (sort_dir or "asc").lower() == "desc"
+        return queryset.order_by(_sort_expression(sort_by, descending), "provider__slug", "name")
+
+    return queryset.order_by(*_ordering(legacy_ordering))
+
+
+def _ordering(value: str | None) -> list[object]:
+    allowed = _allowed_sort_fields()
     if not value:
-        return ["equivalent_hourly_price_toman", "provider__slug", "name"]
+        return [_sort_expression("equivalent_hourly_price_toman"), "provider__slug", "name"]
 
     fields = []
     for raw_field in value.split(","):
         field = raw_field.strip()
         base = field[1:] if field.startswith("-") else field
         if base in allowed:
-            prefix = "-" if field.startswith("-") else ""
-            if base == "gpu_memory_mb":
-                fields.append(f"{prefix}gpu__memory_mb")
-            elif base == "provider":
-                fields.append(f"{prefix}provider__slug")
-            else:
-                fields.append(field)
-    return fields or ["equivalent_hourly_price_toman", "provider__slug", "name"]
+            fields.append(_sort_expression(base, field.startswith("-")))
+    return fields or [_sort_expression("equivalent_hourly_price_toman"), "provider__slug", "name"]

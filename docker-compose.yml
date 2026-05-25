@@ -17,6 +17,7 @@ services:
 
   migrate:
     build: .
+    image: hosein1055/vpsmarket:migrate
     command: python vps_market/manage.py migrate --noinput
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
@@ -31,7 +32,8 @@ services:
 
   web:
     build: .
-    command: sh -c "python vps_market/manage.py collectstatic --noinput && gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000"
+    image: hosein1055/vpsmarket:web
+    command: sh -c "python vps_market/manage.py collectstatic --noinput && gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     environment:
       DATABASE_URL: postgresql://vps_market:vps_market@db:5432/vps_market
       DJANGO_SECRET_KEY: dev-only-change-me
@@ -71,7 +73,7 @@ services:
       args:
         HTTP_PROXY: ${HTTP_PROXY:-}
         HTTPS_PROXY: ${HTTPS_PROXY:-}
-        
+    image: hosein1055/vpsmarket:nginx
     ports:
       - "80:80"
     depends_on:

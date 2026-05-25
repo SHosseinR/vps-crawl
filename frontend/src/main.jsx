@@ -22,17 +22,19 @@ import "./styles.css";
 
 const PAGE_SIZE = 50;
 
-const SORT_OPTIONS = [
-  ["equivalent_hourly_price_toman", "ارزان ترین بر اساس قیمت ساعتی"],
-  ["-equivalent_hourly_price_toman", "گران ترین بر اساس قیمت ساعتی"],
-  ["price_amount_toman", "کمترین قیمت دوره ای"],
-  ["-price_amount_toman", "بیشترین قیمت دوره ای"],
-  ["-cpu_cores", "بیشترین CPU"],
-  ["-ram_mb", "بیشترین RAM"],
-  ["-disk_gb", "بیشترین دیسک"],
-  ["-traffic_gb", "بیشترین ترافیک"],
-  ["-gpu_memory_mb", "بیشترین حافظه GPU"],
-  ["provider", "ارائه دهنده"],
+const SORT_FIELDS = [
+  ["equivalent_hourly_price_toman", "قیمت معادل ساعتی"],
+  ["price_amount_toman", "قیمت دوره ای"],
+  ["cpu_cores", "CPU"],
+  ["ram_mb", "RAM"],
+  ["disk_gb", "دیسک"],
+  ["gpu_memory_mb", "حافظه GPU"],
+  ["last_seen_at", "آخرین به روزرسانی"],
+];
+
+const SORT_DIRECTIONS = [
+  ["asc", "صعودی"],
+  ["desc", "نزولی"],
 ];
 
 const EMPTY_FILTERS = {
@@ -40,15 +42,17 @@ const EMPTY_FILTERS = {
   provider: "",
   region: "",
   billing_period: "",
-  disk_type: "",
-  min_price_toman: "",
-  max_price_toman: "",
+  price_min: "",
+  price_max: "",
   min_cpu_cores: "",
+  max_cpu_cores: "",
   min_ram_mb: "",
-  min_disk_gb: "",
+  max_ram_mb: "",
   gpu_model: "",
   min_gpu_memory_mb: "",
-  ordering: "equivalent_hourly_price_toman",
+  max_gpu_memory_mb: "",
+  sort_by: "equivalent_hourly_price_toman",
+  sort_dir: "asc",
 };
 
 const PERIOD_LABELS = {
@@ -141,15 +145,26 @@ function OffersPage({ mode }) {
 
   const updateFilter = (name, value) => {
     const next = new URLSearchParams(searchParams);
-    if (value) next.set(name, value);
-    else next.delete(name);
+    const updates = typeof name === "object" ? name : { [name]: value };
+    for (const [key, nextValue] of Object.entries(updates)) {
+      if (nextValue) next.set(key, nextValue);
+      else next.delete(key);
+    }
+    if (Object.hasOwn(updates, "billing_period")) {
+      next.delete("price_min");
+      next.delete("price_max");
+      next.delete("min_price_toman");
+      next.delete("max_price_toman");
+      next.delete("min_equivalent_hourly_price_toman");
+      next.delete("max_equivalent_hourly_price_toman");
+    }
     next.delete("region_detail");
     next.delete("page");
     setSearchParams(next);
   };
 
   const clearFilters = () => {
-    const next = new URLSearchParams({ ordering: "equivalent_hourly_price_toman" });
+    const next = new URLSearchParams({ sort_by: "equivalent_hourly_price_toman", sort_dir: "asc" });
     setSearchParams(next);
   };
 
@@ -185,16 +200,28 @@ function OffersPage({ mode }) {
               <strong>{formatNumber(data?.count ?? 0)}</strong>
               <span>نتیجه</span>
             </div>
-            <label className="select-wrap">
-              <span>مرتب سازی</span>
-              <select value={filters.ordering} onChange={(event) => updateFilter("ordering", event.target.value)}>
-                {SORT_OPTIONS.map(([value, label]) => (
+            <div className="sort-controls">
+              <label className="select-wrap">
+                <span>مرتب سازی</span>
+                <select value={filters.sort_by} onChange={(event) => updateFilter("sort_by", event.target.value)}>
+                  {SORT_FIELDS.map(([value, label]) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="select-wrap compact">
+                <span>جهت</span>
+                <select value={filters.sort_dir} onChange={(event) => updateFilter("sort_dir", event.target.value)}>
+                  {SORT_DIRECTIONS.map(([value, label]) => (
                   <option key={value} value={value}>
                     {label}
                   </option>
                 ))}
-              </select>
-            </label>
+                </select>
+              </label>
+            </div>
           </div>
 
           {error && <div className="state-box error">{error}</div>}
@@ -242,16 +269,84 @@ function ModeSwitch({ activeMode }) {
 
 function FilterControls({ filters, options, mode, onChange, onClear }) {
   const gpuSpecs = options?.gpu_specs || [];
+  const bounds = options?.bounds || {};
+  const priceConfig = priceFilterConfig(filters.billing_period);
+
+  const onRangeChange = (minKey, maxKey, range, nextMin, nextMax) => {
+    onChange({
+      [minKey]: nextMin <= range.min ? "" : String(nextMin),
+      [maxKey]: nextMax >= range.max ? "" : String(nextMax),
+    });
+  };
 
   return (
     <div className="filters">
-      <label className="input-wrap wide">
-        <span>جستجو</span>
-        <div className="search-input">
-          <Search size={16} />
-          <input value={filters.search} onChange={(event) => onChange("search", event.target.value)} placeholder="RTX، تهران، CX..." />
-        </div>
-      </label>
+      <Select label="دوره پرداخت" value={filters.billing_period} onChange={(value) => onChange("billing_period", value)}>
+        <option value="">همه</option>
+        {(options?.billing_periods || []).map((period) => (
+          <option key={period} value={period}>
+            {periodLabel(period)}
+          </option>
+        ))}
+      </Select>
+
+      <RangeFilter
+        label={priceConfig.label}
+        unit="تومان"
+        hint={priceConfig.hint}
+        bounds={{ min: priceConfig.min, max: priceConfig.max }}
+        minValue={filters.price_min}
+        maxValue={filters.price_max}
+        step={priceConfig.step}
+        format={formatPrice}
+        onChange={(min, max, range) => onRangeChange("price_min", "price_max", range, min, max)}
+      />
+
+      {mode === "gpu" && (
+        <Select label="مدل GPU" value={filters.gpu_model} onChange={(value) => onChange("gpu_model", value)}>
+          <option value="">همه</option>
+          {gpuSpecs.map((gpu) => (
+            <option key={gpu.id} value={gpu.model}>
+              {gpu.model}{gpu.memory_mb ? ` ${formatMemory(gpu.memory_mb)}` : ""}
+            </option>
+          ))}
+        </Select>
+      )}
+
+      {mode === "gpu" && (
+        <RangeFilter
+          label="حافظه GPU"
+          unit="VRAM"
+          bounds={rangeBounds(bounds.gpu_memory_mb, 0, 81920)}
+          minValue={filters.min_gpu_memory_mb}
+          maxValue={filters.max_gpu_memory_mb}
+          step={1024}
+          format={formatMemory}
+          onChange={(min, max, range) => onRangeChange("min_gpu_memory_mb", "max_gpu_memory_mb", range, min, max)}
+        />
+      )}
+
+      <RangeFilter
+        label="CPU"
+        unit="هسته"
+        bounds={rangeBounds(bounds.cpu_cores, 0, 128)}
+        minValue={filters.min_cpu_cores}
+        maxValue={filters.max_cpu_cores}
+        step={1}
+        format={(value) => `${formatNumber(value)} هسته`}
+        onChange={(min, max, range) => onRangeChange("min_cpu_cores", "max_cpu_cores", range, min, max)}
+      />
+
+      <RangeFilter
+        label="RAM"
+        unit="حافظه"
+        bounds={rangeBounds(bounds.ram_mb, 0, 524288)}
+        minValue={filters.min_ram_mb}
+        maxValue={filters.max_ram_mb}
+        step={1024}
+        format={formatMemory}
+        onChange={(min, max, range) => onRangeChange("min_ram_mb", "max_ram_mb", range, min, max)}
+      />
 
       <Select label="ارائه دهنده" value={filters.provider} onChange={(value) => onChange("provider", value)}>
         <option value="">همه</option>
@@ -271,41 +366,24 @@ function FilterControls({ filters, options, mode, onChange, onClear }) {
         ))}
       </Select>
 
-      <Select label="دوره پرداخت" value={filters.billing_period} onChange={(value) => onChange("billing_period", value)}>
-        <option value="">همه</option>
-        {(options?.billing_periods || []).map((period) => (
-          <option key={period} value={period}>
-            {periodLabel(period)}
-          </option>
-        ))}
-      </Select>
+      {mode !== "gpu" && (
+        <Select label="مدل GPU" value={filters.gpu_model} onChange={(value) => onChange("gpu_model", value)}>
+          <option value="">همه</option>
+          {gpuSpecs.map((gpu) => (
+            <option key={gpu.id} value={gpu.model}>
+              {gpu.model}{gpu.memory_mb ? ` ${formatMemory(gpu.memory_mb)}` : ""}
+            </option>
+          ))}
+        </Select>
+      )}
 
-      <Select label="نوع دیسک" value={filters.disk_type} onChange={(value) => onChange("disk_type", value)}>
-        <option value="">همه</option>
-        {(options?.disk_types || []).map((disk) => (
-          <option key={disk} value={disk}>
-            {disk}
-          </option>
-        ))}
-      </Select>
-
-      <div className="number-grid">
-        <NumberInput label="حداقل قیمت (تومان)" value={filters.min_price_toman} onChange={(value) => onChange("min_price_toman", value)} />
-        <NumberInput label="حداکثر قیمت (تومان)" value={filters.max_price_toman} onChange={(value) => onChange("max_price_toman", value)} />
-        <NumberInput label="حداقل CPU" value={filters.min_cpu_cores} onChange={(value) => onChange("min_cpu_cores", value)} />
-        <NumberInput label="حداقل RAM (MB)" value={filters.min_ram_mb} onChange={(value) => onChange("min_ram_mb", value)} />
-        <NumberInput label="حداقل دیسک (GB)" value={filters.min_disk_gb} onChange={(value) => onChange("min_disk_gb", value)} />
-        <NumberInput label="حداقل VRAM (MB)" value={filters.min_gpu_memory_mb} onChange={(value) => onChange("min_gpu_memory_mb", value)} disabled={mode !== "gpu" && !filters.gpu_model} />
-      </div>
-
-      <Select label="مدل GPU" value={filters.gpu_model} onChange={(value) => onChange("gpu_model", value)}>
-        <option value="">همه</option>
-        {gpuSpecs.map((gpu) => (
-          <option key={gpu.id} value={gpu.model}>
-            {gpu.model}{gpu.memory_mb ? ` ${formatMemory(gpu.memory_mb)}` : ""}
-          </option>
-        ))}
-      </Select>
+      <label className="input-wrap wide">
+        <span>جستجو</span>
+        <div className="search-input">
+          <Search size={16} />
+          <input value={filters.search} onChange={(event) => onChange("search", event.target.value)} placeholder="RTX، تهران، CX..." />
+        </div>
+      </label>
 
       <button className="clear-btn" type="button" onClick={onClear}>
         پاک کردن فیلترها
@@ -331,6 +409,55 @@ function NumberInput({ label, value, onChange, disabled }) {
       <span>{label}</span>
       <input disabled={disabled} type="number" min="0" value={value} onChange={(event) => onChange(event.target.value)} />
     </label>
+  );
+}
+
+function RangeFilter({ label, unit, hint, bounds, minValue, maxValue, step, format, onChange }) {
+  const range = bounds || { min: 0, max: 0 };
+  const disabled = range.max <= range.min;
+  const selectedMin = clampNumber(minValue, range.min, range.max, range.min);
+  const selectedMax = clampNumber(maxValue, range.min, range.max, range.max);
+  const min = Math.min(selectedMin, selectedMax);
+  const max = Math.max(selectedMin, selectedMax);
+  const minPercent = disabled ? 0 : ((min - range.min) / (range.max - range.min)) * 100;
+  const maxPercent = disabled ? 100 : ((max - range.min) / (range.max - range.min)) * 100;
+  const left = disabled ? 0 : 100 - maxPercent;
+  const right = disabled ? 0 : minPercent;
+
+  return (
+    <div className={`range-filter ${disabled ? "disabled" : ""}`}>
+      <div className="range-head">
+        <span>{label}</span>
+        <small>{unit}</small>
+      </div>
+      {hint && <p className="range-hint">{hint}</p>}
+      <div className="range-values">
+        <strong>{format(min)}</strong>
+        <strong>{format(max)}</strong>
+      </div>
+      <div className="range-slider" style={{ "--range-left": `${left}%`, "--range-right": `${right}%` }}>
+        <input
+          type="range"
+          min={range.min}
+          max={range.max}
+          step={step}
+          value={min}
+          disabled={disabled}
+          onChange={(event) => onChange(Math.min(Number(event.target.value), max), max, range)}
+          aria-label={`${label} حداقل`}
+        />
+        <input
+          type="range"
+          min={range.min}
+          max={range.max}
+          step={step}
+          value={max}
+          disabled={disabled}
+          onChange={(event) => onChange(min, Math.max(Number(event.target.value), min), range)}
+          aria-label={`${label} حداکثر`}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -472,17 +599,35 @@ function filtersFromParams(params, mode) {
   for (const key of Object.keys(filters)) {
     filters[key] = params.get(key) || filters[key];
   }
-  if (mode === "gpu") {
-    filters.ordering = params.get("ordering") || "equivalent_hourly_price_toman";
+  filters.price_min =
+    params.get("price_min") ||
+    params.get("min_price_toman") ||
+    params.get("min_equivalent_hourly_price_toman") ||
+    filters.price_min;
+  filters.price_max =
+    params.get("price_max") ||
+    params.get("max_price_toman") ||
+    params.get("max_equivalent_hourly_price_toman") ||
+    filters.price_max;
+  const legacyOrdering = params.get("ordering");
+  if (legacyOrdering) {
+    filters.sort_by = legacyOrdering.replace("-", "");
+    filters.sort_dir = legacyOrdering.startsWith("-") ? "desc" : "asc";
   }
   return filters;
 }
 
 function buildOfferQuery(filters, page, mode) {
   const params = new URLSearchParams();
+  const priceConfig = priceFilterConfig(filters.billing_period);
+  const skipKeys = new Set(["price_min", "price_max"]);
   for (const [key, value] of Object.entries(filters)) {
-    if (value) params.set(key, value);
+    if (value && !skipKeys.has(key)) params.set(key, value);
   }
+  const minPrice = clampNumber(filters.price_min, priceConfig.min, priceConfig.max, priceConfig.min);
+  const maxPrice = clampNumber(filters.price_max, priceConfig.min, priceConfig.max, priceConfig.max);
+  if (filters.price_min && minPrice > priceConfig.min) params.set(priceConfig.minParam, String(minPrice));
+  if (filters.price_max && maxPrice < priceConfig.max) params.set(priceConfig.maxParam, String(maxPrice));
   if (mode === "gpu") params.set("has_gpu", "true");
   params.set("page", String(page));
   return params.toString();
@@ -511,6 +656,67 @@ function periodLabel(value) {
 
 function regionLabel(value) {
   return REGION_LABELS[String(value || "").toLowerCase()] || value || "-";
+}
+
+function priceFilterConfig(billingPeriod) {
+  const period = String(billingPeriod || "").toLowerCase();
+  if (!period) {
+    return {
+      label: "قیمت معادل ساعتی",
+      hint: "تا وقتی دوره پرداخت انتخاب نشده، فیلتر قیمت بر اساس معادل ساعتی محاسبه می شود.",
+      min: 10000,
+      max: 2000000,
+      step: 10000,
+      minParam: "min_equivalent_hourly_price_toman",
+      maxParam: "max_equivalent_hourly_price_toman",
+    };
+  }
+  if (period === "hourly" || period === "hour") {
+    return {
+      label: "قیمت ساعتی",
+      hint: "با انتخاب دوره پرداخت، فیلتر قیمت روی قیمت همان دوره اعمال می شود.",
+      min: 10000,
+      max: 2000000,
+      step: 10000,
+      minParam: "min_price_toman",
+      maxParam: "max_price_toman",
+    };
+  }
+  if (period === "monthly" || period === "month") {
+    return {
+      label: "قیمت ماهانه",
+      hint: "با انتخاب دوره پرداخت، فیلتر قیمت روی قیمت همان دوره اعمال می شود.",
+      min: 1000000,
+      max: 500000000,
+      step: 1000000,
+      minParam: "min_price_toman",
+      maxParam: "max_price_toman",
+    };
+  }
+  return {
+    label: `قیمت ${periodLabel(period)}`,
+    hint: "با انتخاب دوره پرداخت، فیلتر قیمت روی قیمت همان دوره اعمال می شود.",
+    min: 10000,
+    max: 500000000,
+    step: 100000,
+    minParam: "min_price_toman",
+    maxParam: "max_price_toman",
+  };
+}
+
+function rangeBounds(value, fallbackMin, fallbackMax) {
+  const min = Number(value?.min ?? fallbackMin);
+  const max = Number(value?.max ?? fallbackMax);
+  if (!Number.isFinite(min) || !Number.isFinite(max) || max <= min) {
+    return { min: fallbackMin, max: fallbackMax };
+  }
+  return { min: Math.floor(min), max: Math.ceil(max) };
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return fallback;
+  return Math.min(max, Math.max(min, number));
 }
 
 createRoot(document.getElementById("root")).render(<App />);
