@@ -24,12 +24,10 @@ const PAGE_SIZE = 50;
 
 const SORT_FIELDS = [
   ["equivalent_hourly_price_toman", "قیمت معادل ساعتی"],
-  ["price_amount_toman", "قیمت دوره ای"],
   ["cpu_cores", "CPU"],
   ["ram_mb", "RAM"],
   ["disk_gb", "دیسک"],
   ["gpu_memory_mb", "حافظه GPU"],
-  ["last_seen_at", "آخرین به روزرسانی"],
 ];
 
 const SORT_DIRECTIONS = [
@@ -48,6 +46,8 @@ const EMPTY_FILTERS = {
   max_cpu_cores: "",
   min_ram_mb: "",
   max_ram_mb: "",
+  min_disk_gb: "",
+  max_disk_gb: "",
   gpu_model: "",
   min_gpu_memory_mb: "",
   max_gpu_memory_mb: "",
@@ -348,6 +348,17 @@ function FilterControls({ filters, options, mode, onChange, onClear }) {
         onChange={(min, max, range) => onRangeChange("min_ram_mb", "max_ram_mb", range, min, max)}
       />
 
+      <RangeFilter
+        label="دیسک"
+        unit="GB"
+        bounds={{ min: 10, max: 2048 }}
+        minValue={filters.min_disk_gb}
+        maxValue={filters.max_disk_gb}
+        step={10}
+        format={formatDisk}
+        onChange={(min, max, range) => onRangeChange("min_disk_gb", "max_disk_gb", range, min, max)}
+      />
+
       <Select label="ارائه دهنده" value={filters.provider} onChange={(value) => onChange("provider", value)}>
         <option value="">همه</option>
         {(options?.providers || []).map((provider) => (
@@ -403,26 +414,20 @@ function Select({ label, value, onChange, children }) {
   );
 }
 
-function NumberInput({ label, value, onChange, disabled }) {
-  return (
-    <label className="input-wrap">
-      <span>{label}</span>
-      <input disabled={disabled} type="number" min="0" value={value} onChange={(event) => onChange(event.target.value)} />
-    </label>
-  );
-}
-
 function RangeFilter({ label, unit, hint, bounds, minValue, maxValue, step, format, onChange }) {
   const range = bounds || { min: 0, max: 0 };
   const disabled = range.max <= range.min;
-  const selectedMin = clampNumber(minValue, range.min, range.max, range.min);
-  const selectedMax = clampNumber(maxValue, range.min, range.max, range.max);
+  const selectedMin = snapToStep(clampNumber(minValue, range.min, range.max, range.min), range.min, range.max, step);
+  const selectedMax = snapToStep(clampNumber(maxValue, range.min, range.max, range.max), range.min, range.max, step);
   const min = Math.min(selectedMin, selectedMax);
   const max = Math.max(selectedMin, selectedMax);
-  const minPercent = disabled ? 0 : ((min - range.min) / (range.max - range.min)) * 100;
-  const maxPercent = disabled ? 100 : ((max - range.min) / (range.max - range.min)) * 100;
+  const minPosition = disabled ? 0 : valueToLogPosition(min, range, step);
+  const maxPosition = disabled ? 1000 : valueToLogPosition(max, range, step);
+  const minPercent = minPosition / 10;
+  const maxPercent = maxPosition / 10;
   const left = disabled ? 0 : 100 - maxPercent;
   const right = disabled ? 0 : minPercent;
+  const positionToValue = (position) => snapToStep(logPositionToValue(Number(position), range, step), range.min, range.max, step);
 
   return (
     <div className={`range-filter ${disabled ? "disabled" : ""}`}>
@@ -438,22 +443,22 @@ function RangeFilter({ label, unit, hint, bounds, minValue, maxValue, step, form
       <div className="range-slider" style={{ "--range-left": `${left}%`, "--range-right": `${right}%` }}>
         <input
           type="range"
-          min={range.min}
-          max={range.max}
-          step={step}
-          value={min}
+          min="0"
+          max="1000"
+          step="1"
+          value={minPosition}
           disabled={disabled}
-          onChange={(event) => onChange(Math.min(Number(event.target.value), max), max, range)}
+          onChange={(event) => onChange(Math.min(positionToValue(event.target.value), max), max, range)}
           aria-label={`${label} حداقل`}
         />
         <input
           type="range"
-          min={range.min}
-          max={range.max}
-          step={step}
-          value={max}
+          min="0"
+          max="1000"
+          step="1"
+          value={maxPosition}
           disabled={disabled}
-          onChange={(event) => onChange(min, Math.max(Number(event.target.value), min), range)}
+          onChange={(event) => onChange(min, Math.max(positionToValue(event.target.value), min), range)}
           aria-label={`${label} حداکثر`}
         />
       </div>
@@ -490,12 +495,14 @@ function OfferRow({ offer, expanded, onToggle, gpuFirst }) {
           </div>
         </div>
         <div className="price-box">
-          <div className="price-line">
-            <strong>{formatPrice(offer.price_amount_toman)}</strong>
-            <span>تومان</span>
+          <div className="price-card">
+            <div className="price-line">
+              <strong>{formatPrice(offer.price_amount_toman)}</strong>
+              <span>تومان</span>
+              <b className={`period-badge ${periodTone(offer.billing_period)}`}>{periodLabel(offer.billing_period)}</b>
+            </div>
           </div>
-          <div className="period-line">
-            <b>{periodLabel(offer.billing_period)}</b>
+          <div className="period-card">
             {offer.equivalent_hourly_price_toman && (
               <small>معادل ساعتی {formatPrice(offer.equivalent_hourly_price_toman)} تومان</small>
             )}
@@ -635,13 +642,19 @@ function buildOfferQuery(filters, page, mode) {
 
 function formatPrice(value) {
   if (value === null || value === undefined || value === "") return "تماس بگیرید";
-  return Number(value).toLocaleString("fa-IR", { maximumFractionDigits: 2 });
+  return Math.round(Number(value)).toLocaleString("fa-IR", { maximumFractionDigits: 0 });
 }
 
 function formatMemory(value) {
   if (!value) return "-";
   if (value >= 1024) return `${formatNumber(value / 1024)} GB`;
   return `${formatNumber(value)} MB`;
+}
+
+function formatDisk(value) {
+  if (!value) return "-";
+  if (value >= 1024) return `${formatNumber(value / 1024)} TB`;
+  return `${formatNumber(value)} GB`;
 }
 
 function formatNumber(value) {
@@ -652,6 +665,13 @@ function formatNumber(value) {
 
 function periodLabel(value) {
   return PERIOD_LABELS[String(value || "").toLowerCase()] || value || "-";
+}
+
+function periodTone(value) {
+  const period = String(value || "").toLowerCase();
+  if (period === "monthly" || period === "month") return "monthly";
+  if (period === "hourly" || period === "hour") return "hourly";
+  return "neutral";
 }
 
 function regionLabel(value) {
@@ -718,6 +738,28 @@ function clampNumber(value, min, max, fallback) {
   const number = Number(value);
   if (!Number.isFinite(number)) return fallback;
   return Math.min(max, Math.max(min, number));
+}
+
+function valueToLogPosition(value, range, step) {
+  const span = range.max - range.min;
+  if (span <= 0) return 0;
+  const scale = Math.max(Number(step) || 1, 1);
+  const normalized = Math.max(0, value - range.min);
+  return Math.round((Math.log1p(normalized / scale) / Math.log1p(span / scale)) * 1000);
+}
+
+function logPositionToValue(position, range, step) {
+  const span = range.max - range.min;
+  if (span <= 0) return range.min;
+  const scale = Math.max(Number(step) || 1, 1);
+  const ratio = Math.min(1000, Math.max(0, position)) / 1000;
+  return range.min + scale * (Math.expm1(ratio * Math.log1p(span / scale)));
+}
+
+function snapToStep(value, min, max, step) {
+  const stepSize = Math.max(Number(step) || 1, 1);
+  const snapped = min + Math.round((value - min) / stepSize) * stepSize;
+  return Math.min(max, Math.max(min, snapped));
 }
 
 createRoot(document.getElementById("root")).render(<App />);

@@ -40,6 +40,7 @@ class ProviderListAPIView(ListAPIView):
         OpenApiParameter("min_ram_mb", int),
         OpenApiParameter("max_ram_mb", int),
         OpenApiParameter("min_disk_gb", float),
+        OpenApiParameter("max_disk_gb", float),
         OpenApiParameter("min_traffic_gb", float),
         OpenApiParameter("min_gpu_memory_mb", int),
         OpenApiParameter("max_gpu_memory_mb", int),
@@ -95,6 +96,7 @@ class ServerOfferListAPIView(ListAPIView):
         queryset = _number_filter(queryset, "ram_mb", params.get("min_ram_mb"), "gte")
         queryset = _number_filter(queryset, "ram_mb", params.get("max_ram_mb"), "lte")
         queryset = _number_filter(queryset, "disk_gb", params.get("min_disk_gb"), "gte")
+        queryset = _number_filter(queryset, "disk_gb", params.get("max_disk_gb"), "lte")
         queryset = _number_filter(queryset, "traffic_gb", params.get("min_traffic_gb"), "gte")
         queryset = _number_filter(queryset, "gpu__memory_mb", params.get("min_gpu_memory_mb"), "gte")
         queryset = _number_filter(queryset, "gpu__memory_mb", params.get("max_gpu_memory_mb"), "lte")
