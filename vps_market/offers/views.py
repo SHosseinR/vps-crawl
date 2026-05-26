@@ -131,6 +131,8 @@ class ServerOfferDetailAPIView(RetrieveAPIView):
             "max_price_irr": serializers.IntegerField(allow_null=True),
             "min_price_toman": serializers.IntegerField(allow_null=True),
             "max_price_toman": serializers.IntegerField(allow_null=True),
+            "min_equivalent_hourly_price_toman": serializers.IntegerField(allow_null=True),
+            "gpu_min_equivalent_hourly_price_toman": serializers.IntegerField(allow_null=True),
             "regions": serializers.ListField(child=serializers.DictField()),
             "region_details": serializers.ListField(child=serializers.DictField()),
             "providers": serializers.ListField(child=serializers.DictField()),
@@ -149,6 +151,11 @@ class OfferStatisticsAPIView(APIView):
             max_price_irr=Max("price_amount_irr"),
             min_price_toman=Min("price_amount_toman"),
             max_price_toman=Max("price_amount_toman"),
+            min_equivalent_hourly_price_toman=Min("equivalent_hourly_price_toman"),
+            gpu_min_equivalent_hourly_price_toman=Min(
+                "equivalent_hourly_price_toman",
+                filter=Q(has_gpu=True),
+            ),
         )
         aggregate["providers_count"] = Provider.objects.count()
         aggregate["regions"] = list(
@@ -171,7 +178,10 @@ class OfferStatisticsAPIView(APIView):
         aggregate["gpu_models"] = list(
             offers.filter(gpu__isnull=False)
             .values("gpu__model", "gpu__memory_mb")
-            .annotate(count=Count("id"))
+            .annotate(
+                count=Count("id"),
+                min_equivalent_hourly_price_toman=Min("equivalent_hourly_price_toman"),
+            )
             .order_by("gpu__model", "gpu__memory_mb")
         )
         return Response(aggregate)

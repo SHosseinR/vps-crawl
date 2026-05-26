@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { Link, NavLink, Route, BrowserRouter as Router, Routes, useSearchParams } from "react-router-dom";
 import {
+  Boxes,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -88,7 +89,7 @@ function App() {
             <span>بازار VPS</span>
           </Link>
           <nav className="nav">
-            <NavLink to="/" end>
+            <NavLink to="/servers">
               همه سرورها
             </NavLink>
             <NavLink to="/gpu">
@@ -98,11 +99,105 @@ function App() {
           </nav>
         </header>
         <Routes>
-          <Route path="/" element={<OffersPage mode="all" />} />
-          <Route path="/gpu" element={<OffersPage mode="gpu" />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/servers" element={<OffersPage mode="all" />} />
+          <Route path="/gpu" element={<GpuCatalogPage />} />
+          <Route path="/gpu/offers" element={<OffersPage mode="gpu" />} />
         </Routes>
       </div>
     </Router>
+  );
+}
+
+function LandingPage() {
+  const { stats, loading } = useStats();
+
+  return (
+    <main className="workspace entry-workspace">
+      <section className="entry-hero">
+        <div className="entry-copy">
+          <span className="eyebrow">انتخاب مسیر</span>
+          <h1>برای شروع، نوع سرور را انتخاب کن</h1>
+          <p>قیمت‌ها و مشخصات را کنار هم ببین و سریع‌تر گزینه مناسب را پیدا کن.</p>
+        </div>
+        <div className="entry-metrics">
+          <Metric label="کل پیشنهادها" value={loading ? "..." : formatNumber(stats?.offers_count || 0)} />
+          <Metric label="پیشنهادهای GPU" value={loading ? "..." : formatNumber(stats?.gpu_offers_count || 0)} />
+        </div>
+      </section>
+
+      <section className="choice-grid" aria-label="نوع سرور">
+        <Link to="/servers" className="choice-card">
+          <span className="choice-icon">
+            <Server size={28} />
+          </span>
+          <span>
+            <strong>سرور مجازی</strong>
+            <small>{formatNumber(stats?.offers_count || 0)} پیشنهاد</small>
+          </span>
+          <b>{formatHourlyFrom(stats?.min_equivalent_hourly_price_toman)}</b>
+        </Link>
+        <Link to="/gpu" className="choice-card primary">
+          <span className="choice-icon">
+            <Zap size={28} />
+          </span>
+          <span>
+            <strong>GPU</strong>
+            <small>{formatNumber(stats?.gpu_offers_count || 0)} پیشنهاد</small>
+          </span>
+          <b>{formatHourlyFrom(stats?.gpu_min_equivalent_hourly_price_toman)}</b>
+        </Link>
+      </section>
+    </main>
+  );
+}
+
+function GpuCatalogPage() {
+  const { stats, loading, error } = useStats();
+  const gpuModels = useMemo(() => normalizeGpuModels(stats?.gpu_models), [stats]);
+
+  return (
+    <main className="workspace">
+      <section className="summary-band">
+        <div>
+          <h1>انتخاب مدل GPU</h1>
+          <p>مدل موردنظرت را انتخاب کن تا پیشنهادهای مرتبط را با جزئیات ببینی.</p>
+        </div>
+        <Link to="/gpu/offers" className="see-all-btn">
+          <Boxes size={18} />
+          دیدن همه GPUها
+        </Link>
+      </section>
+
+      {error && <div className="state-box error">{error}</div>}
+      {loading && <div className="state-box">در حال دریافت مدل‌های GPU...</div>}
+      {!loading && !error && gpuModels.length === 0 && <div className="state-box">مدل GPU پیدا نشد.</div>}
+
+      <section className="gpu-model-grid">
+        {gpuModels.map((gpu) => (
+          <Link key={`${gpu.model}-${gpu.memory_mb || "unknown"}`} to={`/gpu/offers?gpu_model=${encodeURIComponent(gpu.model)}`} className="gpu-model-card">
+            <div className="gpu-model-title">
+              <Zap size={19} />
+              <h2>{gpu.model}</h2>
+            </div>
+            <div className="gpu-model-stats">
+              <Metric label="تعداد آیتم‌ها" value={formatNumber(gpu.count)} />
+              <Metric label="VRAM" value={formatMemory(gpu.memory_mb)} />
+              <Metric label="قیمت از" value={formatHourlyFrom(gpu.min_equivalent_hourly_price_toman)} />
+            </div>
+          </Link>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+function Metric({ label, value }) {
+  return (
+    <div className="metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
   );
 }
 
@@ -170,17 +265,12 @@ function OffersPage({ mode }) {
 
   const totalPages = Math.max(1, Math.ceil((data?.count || 0) / PAGE_SIZE));
   const title = mode === "gpu" ? "سرورهای GPU" : "همه سرورها";
-  const subtitle =
-    mode === "gpu"
-      ? "اول GPU و حافظه گرافیکی را ببین، بعد مشخصات VM را مقایسه کن."
-      : "پیشنهادها بر اساس قیمت معادل ساعتی از ارزان ترین مرتب شده اند.";
 
   return (
     <main className="workspace">
       <section className="summary-band">
         <div>
           <h1>{title}</h1>
-          <p>{subtitle}</p>
         </div>
         <ModeSwitch activeMode={mode} />
       </section>
@@ -255,11 +345,11 @@ function OffersPage({ mode }) {
 function ModeSwitch({ activeMode }) {
   return (
     <div className="mode-switch" aria-label="نوع پیشنهادها">
-      <Link to="/" className={activeMode === "all" ? "active" : ""}>
+      <Link to="/servers" className={activeMode === "all" ? "active" : ""}>
         <Server size={19} />
         همه سرورها
       </Link>
-      <Link to="/gpu" className={activeMode === "gpu" ? "active gpu" : "gpu"}>
+      <Link to="/gpu/offers" className={activeMode === "gpu" ? "active gpu" : "gpu"}>
         <Zap size={21} />
         فقط GPU
       </Link>
@@ -583,6 +673,33 @@ function Pagination({ page, totalPages, setPage }) {
   );
 }
 
+function useStats() {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+
+    fetch("/api/statistics/", { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.json();
+      })
+      .then(setStats)
+      .catch((err) => {
+        if (err.name !== "AbortError") setError("امکان دریافت آمار وجود ندارد.");
+      })
+      .finally(() => setLoading(false));
+
+    return () => controller.abort();
+  }, []);
+
+  return { stats, loading, error };
+}
+
 function vmSpecs(offer) {
   return [
     { icon: Cpu, label: "CPU", value: offer.cpu_cores ? `${formatNumber(offer.cpu_cores)} هسته` : "-" },
@@ -643,6 +760,11 @@ function buildOfferQuery(filters, page, mode) {
 function formatPrice(value) {
   if (value === null || value === undefined || value === "") return "تماس بگیرید";
   return Math.round(Number(value)).toLocaleString("fa-IR", { maximumFractionDigits: 0 });
+}
+
+function formatHourlyFrom(value) {
+  if (value === null || value === undefined || value === "") return "قیمت نامشخص";
+  return `از ${formatPrice(value)} تومان / ساعت`;
 }
 
 function formatMemory(value) {
@@ -760,6 +882,22 @@ function snapToStep(value, min, max, step) {
   const stepSize = Math.max(Number(step) || 1, 1);
   const snapped = min + Math.round((value - min) / stepSize) * stepSize;
   return Math.min(max, Math.max(min, snapped));
+}
+
+function normalizeGpuModels(models = []) {
+  return models
+    .map((gpu) => ({
+      model: gpu.gpu__model || gpu.model || "",
+      memory_mb: gpu.gpu__memory_mb ?? gpu.memory_mb,
+      count: gpu.count || 0,
+      min_equivalent_hourly_price_toman: gpu.min_equivalent_hourly_price_toman,
+    }))
+    .filter((gpu) => gpu.model)
+    .sort((first, second) => {
+      const firstPrice = Number(first.min_equivalent_hourly_price_toman ?? Number.MAX_SAFE_INTEGER);
+      const secondPrice = Number(second.min_equivalent_hourly_price_toman ?? Number.MAX_SAFE_INTEGER);
+      return firstPrice - secondPrice || first.model.localeCompare(second.model);
+    });
 }
 
 createRoot(document.getElementById("root")).render(<App />);

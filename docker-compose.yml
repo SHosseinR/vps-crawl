@@ -31,7 +31,11 @@ services:
     restart: "no"
 
   web:
-    build: .
+    build: 
+      context: .
+      args:
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
     image: hosein1055/vpsmarket:web
     command: sh -c "python vps_market/manage.py collectstatic --noinput && gunicorn --chdir vps_market vps_market.wsgi:application --bind 0.0.0.0:8000 --workers 3"
     environment:
